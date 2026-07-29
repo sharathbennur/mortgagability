@@ -173,16 +173,83 @@ describe('2. UI & Integration Tests', () => {
     const elExpenses = document.getElementById('monthly-expenses');
     const elCashFlowCard = document.getElementById('kpi-cash-flow-card');
 
-    // Default Net Cash Flow is positive ($1,999.56), card should be 'success'
-    expect(elCashFlowCard.className).toContain('success');
+    expect(elCashFlowCard.className).toContain('highlight');
+  });
 
-    // Simulate high expenses making budget negative
-    elExpenses.value = 6000;
-    elExpenses.dispatchEvent(new Event('input'));
+  it('should update Circular DTI Gauge ring offset and threshold colors based on DTI ratio', () => {
+    const elSalary = document.getElementById('take-home-salary');
+    const elExpenses = document.getElementById('monthly-expenses');
+    const elDtiGaugeFill = document.getElementById('dti-gauge-fill');
+    const elDtiStatusPill = document.getElementById('dti-status-pill');
+    const elDtiStatusText = document.getElementById('dti-status-text');
 
-    // Net Cash Flow: $8,000 - $6,000 - $3,000.44 = -$1,000.44
-    // Should toggle card class to 'danger'
-    expect(elCashFlowCard.className).toContain('danger');
+    // 1. High Risk (>36%): Default salary $8000, expenses $3000 -> DTI ~75.0%
+    expect(elDtiGaugeFill.style.stroke).toBe('rgb(239, 68, 68)'); // #ef4444
+    expect(elDtiStatusPill.className).toContain('high-risk');
+    expect(elDtiStatusText.textContent).toContain('High Risk');
+
+    // 2. Ideal (<28%): High salary $25,000, low expenses $1000
+    // Total PITI ($3000.44) + $1000 = $4000.44 / $25000 = 16.0% DTI
+    elSalary.value = 25000;
+    elExpenses.value = 1000;
+    elSalary.dispatchEvent(new Event('input'));
+
+    expect(elDtiGaugeFill.style.stroke).toBe('rgb(16, 185, 129)'); // #10b981
+    expect(elDtiStatusPill.className).toContain('ideal');
+    expect(elDtiStatusText.textContent).toContain('Ideal');
+
+    // 3. Manageable (28%-36%): Salary $12,000, expenses $500
+    // Total PITI ($3000.44) + $500 = $3500.44 / $12000 = 29.1% DTI
+    elSalary.value = 12000;
+    elExpenses.value = 500;
+    elSalary.dispatchEvent(new Event('input'));
+
+    expect(elDtiGaugeFill.style.stroke).toBe('rgb(245, 158, 11)'); // #f59e0b
+    expect(elDtiStatusPill.className).toContain('manageable');
+    expect(elDtiStatusText.textContent).toContain('Manageable');
+  });
+
+  it('should toggle between Text Metrics View and Donut Chart View on Card 1', () => {
+    const btnText = document.getElementById('btn-piti-view-text');
+    const btnChart = document.getElementById('btn-piti-view-chart');
+    const viewText = document.getElementById('piti-view-text');
+    const viewChart = document.getElementById('piti-view-chart');
+
+    // Default view: Text View active, Chart View hidden
+    expect(btnText.className).toContain('active');
+    expect(btnChart.className).not.toContain('active');
+    expect(viewText.className).not.toContain('hidden');
+    expect(viewChart.className).toContain('hidden');
+
+    // Click Chart View toggle
+    btnChart.dispatchEvent(new Event('click'));
+    expect(btnChart.className).toContain('active');
+    expect(btnText.className).not.toContain('active');
+    expect(viewChart.className).not.toContain('hidden');
+    expect(viewText.className).toContain('hidden');
+
+    // Click Text View toggle to switch back
+    btnText.dispatchEvent(new Event('click'));
+    expect(btnText.className).toContain('active');
+    expect(viewText.className).not.toContain('hidden');
+  });
+
+  it('should calculate PMI and include PMI legend chip when Down Payment is less than 20%', () => {
+    const elHomePrice = document.getElementById('home-price');
+    const elDownPayment = document.getElementById('down-payment');
+    const elBreakdownPmiWrapper = document.getElementById('breakdown-pmi-wrapper');
+    const elLegendGrid = document.getElementById('piti-donut-legend');
+
+    // Set Down Payment to 10% ($45,000 on $450,000 home price) -> PMI required
+    elDownPayment.value = 45000;
+    elDownPayment.dispatchEvent(new Event('input'));
+
+    expect(elBreakdownPmiWrapper.style.display).toBe('inline');
+    expect(elLegendGrid.textContent).toContain('PMI');
+
+    // Reset down payment back to standard default ($90,000)
+    elDownPayment.value = 90000;
+    elDownPayment.dispatchEvent(new Event('input'));
   });
 
   it('should apply extra payments from target term calculator when clicked', () => {

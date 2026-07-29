@@ -328,26 +328,54 @@
         
         <!-- KPI Cards Grid -->
         <section class="kpi-grid">
-          <!-- Card 1: Monthly Payment -->
-          <div class="kpi-card highlight">
+          <!-- Card 1: Monthly Payment with Interactive Donut Chart Toggle -->
+          <div class="kpi-card highlight" id="kpi-piti-card">
             <div class="kpi-header">
               <span>Standard Monthly PITI</span>
-              <i class="fa-solid fa-wallet"></i>
+              <div class="kpi-view-toggle" id="piti-view-toggle">
+                <button type="button" class="btn-toggle-view active" id="btn-piti-view-text" title="Text Metrics View" aria-label="Text Metrics View">
+                  <i class="fa-solid fa-list"></i>
+                </button>
+                <button type="button" class="btn-toggle-view" id="btn-piti-view-chart" title="Donut Chart View" aria-label="Donut Chart View">
+                  <i class="fa-solid fa-chart-pie"></i>
+                </button>
+              </div>
             </div>
-            <div class="kpi-value" id="kpi-standard-payment">$0.00</div>
-            <div class="kpi-footer" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-              <div style="display: flex; justify-content: space-between; width: 100%;">
-                <span>With Extra:</span>
-                <strong id="kpi-total-payment">$0.00</strong>
+
+            <!-- View 1: Text View -->
+            <div class="piti-view-container" id="piti-view-text">
+              <div class="kpi-value" id="kpi-standard-payment">$0.00</div>
+              <div class="kpi-footer" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                <div style="display: flex; justify-content: space-between; width: 100%;">
+                  <span>With Extra:</span>
+                  <strong id="kpi-total-payment">$0.00</strong>
+                </div>
+                <div id="arm-kpi-sub-row" style="display: none; justify-content: space-between; width: 100%; color: var(--warning); font-size: 0.78rem; border-top: 1px dashed rgba(245, 158, 11, 0.3); padding-top: 4px; margin-top: 2px;">
+                  <span>Reset PITI (Yr <span id="arm-kpi-reset-yr">6</span>+):</span>
+                  <strong id="arm-kpi-adjusted-payment" style="color: var(--warning);">$0.00</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; width: 100%; font-size: 0.75rem; color: var(--text-muted); border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 4px; margin-top: 2px;" id="piti-text-breakdown-row">
+                  <span>P&amp;I: <span id="breakdown-pi">$0.00</span></span>
+                  <span>Tax: <span id="breakdown-tax">$0.00</span></span>
+                  <span>Ins: <span id="breakdown-ins">$0.00</span></span>
+                  <span id="breakdown-pmi-wrapper" style="display: none; color: var(--danger);">PMI: <span id="breakdown-pmi">$0.00</span></span>
+                </div>
               </div>
-              <div id="arm-kpi-sub-row" style="display: none; justify-content: space-between; width: 100%; color: var(--warning); font-size: 0.78rem; border-top: 1px dashed rgba(245, 158, 11, 0.3); padding-top: 4px; margin-top: 2px;">
-                <span>Reset PITI (Yr <span id="arm-kpi-reset-yr">6</span>+):</span>
-                <strong id="arm-kpi-adjusted-payment" style="color: var(--warning);">$0.00</strong>
-              </div>
-              <div style="display: flex; justify-content: space-between; width: 100%; font-size: 0.75rem; color: var(--text-muted); border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 4px; margin-top: 2px;">
-                <span>P&amp;I: <span id="breakdown-pi">$0.00</span></span>
-                <span>Tax: <span id="breakdown-tax">$0.00</span></span>
-                <span>Ins: <span id="breakdown-ins">$0.00</span></span>
+            </div>
+
+            <!-- View 2: Interactive Donut Chart View -->
+            <div class="piti-view-container hidden" id="piti-view-chart">
+              <div class="piti-donut-container">
+                <div class="donut-chart-wrapper">
+                  <canvas id="pitiDonutCanvas" width="95" height="95"></canvas>
+                  <div class="donut-center-label">
+                    <span class="donut-total-val" id="piti-donut-total">$0</span>
+                    <span class="donut-total-sub">PITI/mo</span>
+                  </div>
+                </div>
+                <div class="donut-legend-grid" id="piti-donut-legend">
+                  <!-- Legend chips added dynamically -->
+                </div>
               </div>
             </div>
           </div>
@@ -391,16 +419,40 @@
             </div>
           </div>
 
-          <!-- Card 4: Net Monthly Cash Flow -->
+          <!-- Card 4: Net Monthly Cash Flow & Circular DTI Gauge -->
           <div class="kpi-card highlight" id="kpi-cash-flow-card">
             <div class="kpi-header">
-              <span>Net Cash Flow</span>
+              <span>Net Cash Flow &amp; DTI</span>
               <i class="fa-solid fa-scale-balanced" id="kpi-cash-flow-icon"></i>
             </div>
-            <div class="kpi-value" id="kpi-net-cash-flow">$0.00</div>
+            
+            <div class="kpi-dti-container">
+              <div class="dti-gauge-wrapper">
+                <svg class="dti-gauge-svg" viewBox="0 0 100 100" aria-hidden="true">
+                  <circle class="dti-gauge-bg" cx="50" cy="50" r="38"></circle>
+                  <circle class="dti-gauge-fill" id="dti-gauge-fill" cx="50" cy="50" r="38"></circle>
+                </svg>
+                <div class="dti-gauge-center">
+                  <span class="dti-gauge-value" id="kpi-dti-ratio">0.0%</span>
+                  <span class="dti-gauge-sublabel">DTI Ratio</span>
+                </div>
+              </div>
+              
+              <div class="dti-info-column">
+                <div class="cash-flow-row">
+                  <span class="cash-flow-label">Net Cash Flow</span>
+                  <span class="cash-flow-value" id="kpi-net-cash-flow">$0.00</span>
+                </div>
+                <div id="dti-status-pill" class="dti-status-pill ideal">
+                  <i class="fa-solid fa-shield-halved" id="dti-status-icon"></i>
+                  <span id="dti-status-text">Ideal (&lt;28%)</span>
+                </div>
+              </div>
+            </div>
+
             <div class="kpi-footer">
-              <span>DTI Ratio: </span>
-              <strong id="kpi-dti-ratio">0.0%</strong>
+              <span>Discretionary Income:</span>
+              <strong id="kpi-discretionary-sub">$0.00</strong>
             </div>
           </div>
         </section>

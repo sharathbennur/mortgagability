@@ -60,6 +60,13 @@ const elArmKpiResetYr = document.getElementById('arm-kpi-reset-yr');
 const elArmKpiAdjustedPayment = document.getElementById('arm-kpi-adjusted-payment');
 const elLabelInterestRate = document.getElementById('label-interest-rate');
 
+// DTI Circular Gauge DOM Elements
+const elDtiGaugeFill = document.getElementById('dti-gauge-fill');
+const elDtiStatusPill = document.getElementById('dti-status-pill');
+const elDtiStatusText = document.getElementById('dti-status-text');
+const elDtiStatusIcon = document.getElementById('dti-status-icon');
+const elKpiDiscretionarySub = document.getElementById('kpi-discretionary-sub');
+
 // Scenario & Storage DOM Elements
 const elBtnSaveScenario = document.getElementById('btn-save-scenario');
 const elScenarioSelect = document.getElementById('scenario-select');
@@ -424,15 +431,20 @@ function updateUI() {
   const ccVal = parseFloat(elClosingCosts.value) || 0;
   elTotalCashDisplay.textContent = formatCurrency(dpVal + ccVal);
 
-  // Base payment and total payment (including extra monthly, tax, and insurance)
+  // Base payment and total payment (including extra monthly, tax, insurance, and PMI)
   const homePrice = parseFloat(elHomePrice.value) || 0;
+  const downPayment = parseFloat(elDownPayment.value) || 0;
+  const loanPrincipal = Math.max(0, homePrice - downPayment);
+  const downPercent = homePrice > 0 ? (downPayment / homePrice) * 100 : 0;
+  const monthlyPmi = (downPercent < 20 && loanPrincipal > 0) ? (loanPrincipal * 0.005) / 12 : 0;
+
   const propTaxRate = parseFloat(elPropertyTax.value) || 0;
   const insRate = parseFloat(elHomeInsurance.value) || 0;
   
   const monthlyTax = (homePrice * (propTaxRate / 100)) / 12;
   const monthlyInsurance = (homePrice * (insRate / 100)) / 12;
   
-  const standardPITI = summary.baseMonthlyPayment + monthlyTax + monthlyInsurance;
+  const standardPITI = summary.baseMonthlyPayment + monthlyTax + monthlyInsurance + monthlyPmi;
   elKpiStandardPayment.textContent = formatCurrency(standardPITI);
   
   const totalMonthlyPITIWithExtra = standardPITI + parseFloat(elExtraMonthly.value || 0);
@@ -442,6 +454,20 @@ function updateUI() {
   elBreakdownPi.textContent = formatCurrency(summary.baseMonthlyPayment);
   elBreakdownTax.textContent = formatCurrency(monthlyTax);
   elBreakdownIns.textContent = formatCurrency(monthlyInsurance);
+
+  const elBreakdownPmi = document.getElementById('breakdown-pmi');
+  const elBreakdownPmiWrapper = document.getElementById('breakdown-pmi-wrapper');
+  if (elBreakdownPmiWrapper) {
+    if (monthlyPmi > 0) {
+      elBreakdownPmiWrapper.style.display = 'inline';
+      if (elBreakdownPmi) elBreakdownPmi.textContent = formatCurrency(monthlyPmi);
+    } else {
+      elBreakdownPmiWrapper.style.display = 'none';
+    }
+  }
+
+  // Render Interactive Donut Chart View
+  renderPitiDonutChart(summary.baseMonthlyPayment, monthlyTax, monthlyInsurance, monthlyPmi);
 
   // Handle ARM KPI sub-row & ARM Phase Badge displays
   if (summary.isArm) {
@@ -471,16 +497,54 @@ function updateUI() {
   const expenses = parseFloat(elMonthlyExpenses.value) || 0;
   const netCashFlow = takeHome - expenses - totalMonthlyPITIWithExtra;
   
-  elKpiNetCashFlow.textContent = formatCurrency(netCashFlow);
+  if (elKpiNetCashFlow) elKpiNetCashFlow.textContent = formatCurrency(netCashFlow);
+  if (elKpiDiscretionarySub) elKpiDiscretionarySub.textContent = formatCurrency(netCashFlow);
   
   const dti = takeHome > 0 ? ((totalMonthlyPITIWithExtra + expenses) / takeHome) * 100 : 0;
-  elKpiDtiRatio.textContent = `${dti.toFixed(1)}%`;
-  
-  // Color code Cash Flow card based on affordability
-  if (netCashFlow < 0) {
-    elKpiCashFlowCard.className = "kpi-card danger";
+  if (elKpiDtiRatio) elKpiDtiRatio.textContent = `${dti.toFixed(1)}%`;
+
+  // Circular DTI SVG Gauge calculations
+  // Circumference for r=38 is 2 * PI * 38 = 238.76
+  const circumference = 238.76;
+  const fillPercent = Math.min(100, Math.max(0, dti));
+  const strokeOffset = circumference - (fillPercent / 100) * circumference;
+
+  if (elDtiGaugeFill) {
+    elDtiGaugeFill.style.strokeDashoffset = strokeOffset;
+  }
+
+  // Thresholds: Green (< 28% ideal), Yellow (28%–36% manageable), Red (> 36% high risk)
+  if (dti < 28) {
+    if (elDtiGaugeFill) {
+      elDtiGaugeFill.style.stroke = '#10b981';
+      elDtiGaugeFill.style.filter = 'drop-shadow(0 0 6px rgba(16, 185, 129, 0.4))';
+    }
+    if (elDtiStatusPill) elDtiStatusPill.className = 'dti-status-pill ideal';
+    if (elDtiStatusText) elDtiStatusText.textContent = 'Ideal (<28%)';
+    if (elDtiStatusIcon) elDtiStatusIcon.className = 'fa-solid fa-shield-halved';
+  } else if (dti <= 36) {
+    if (elDtiGaugeFill) {
+      elDtiGaugeFill.style.stroke = '#f59e0b';
+      elDtiGaugeFill.style.filter = 'drop-shadow(0 0 6px rgba(245, 158, 11, 0.4))';
+    }
+    if (elDtiStatusPill) elDtiStatusPill.className = 'dti-status-pill manageable';
+    if (elDtiStatusText) elDtiStatusText.textContent = 'Manageable (28%–36%)';
+    if (elDtiStatusIcon) elDtiStatusIcon.className = 'fa-solid fa-triangle-exclamation';
   } else {
-    elKpiCashFlowCard.className = "kpi-card success";
+    if (elDtiGaugeFill) {
+      elDtiGaugeFill.style.stroke = '#ef4444';
+      elDtiGaugeFill.style.filter = 'drop-shadow(0 0 6px rgba(239, 68, 68, 0.4))';
+    }
+    if (elDtiStatusPill) elDtiStatusPill.className = 'dti-status-pill high-risk';
+    if (elDtiStatusText) elDtiStatusText.textContent = 'High Risk (>36%)';
+    if (elDtiStatusIcon) elDtiStatusIcon.className = 'fa-solid fa-triangle-exclamation';
+  }
+  
+  // Color code Cash Flow card background based on affordability
+  if (netCashFlow < 0) {
+    elKpiCashFlowCard.className = 'kpi-card danger';
+  } else {
+    elKpiCashFlowCard.className = 'kpi-card highlight';
   }
 
   // Interest saved and paid
@@ -1642,6 +1706,112 @@ function setupEventHandlers() {
 
   if (elBtnThemeToggle) {
     elBtnThemeToggle.addEventListener('click', toggleTheme);
+  }
+
+  setupPitiViewToggle();
+}
+
+// ==========================================================================
+// PITI DONUT CHART & VIEW TOGGLE HELPERS
+// ==========================================================================
+
+let pitiDonutChartInstance = null;
+
+function renderPitiDonutChart(pi, tax, ins, pmi = 0) {
+  const canvas = document.getElementById('pitiDonutCanvas');
+  if (!canvas || typeof Chart === 'undefined') return;
+
+  const ctx = canvas.getContext('2d');
+  if (pitiDonutChartInstance) {
+    pitiDonutChartInstance.destroy();
+  }
+
+  const labels = ['P&I', 'Property Tax', 'Home Ins'];
+  const data = [pi, tax, ins];
+  const colors = ['#6366f1', '#06b6d4', '#8b5cf6'];
+
+  if (pmi > 0) {
+    labels.push('PMI');
+    data.push(pmi);
+    colors.push('#f43f5e');
+  }
+
+  try {
+    pitiDonutChartInstance = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: colors,
+          borderWidth: 0,
+          hoverOffset: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '72%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const val = context.raw || 0;
+                return `${context.label}: $${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+              }
+            }
+          }
+        }
+      }
+    });
+  } catch (e) {
+    // Graceful fallback for environments without canvas 2d context
+  }
+
+  // Render HTML Legend Chips & Donut Center Total
+  const legendGrid = document.getElementById('piti-donut-legend');
+  const elDonutTotal = document.getElementById('piti-donut-total');
+  const total = pi + tax + ins + pmi;
+  
+  if (elDonutTotal) {
+    elDonutTotal.textContent = formatCurrency(total);
+  }
+
+  if (legendGrid) {
+    legendGrid.innerHTML = labels.map((label, idx) => `
+      <div class="legend-chip">
+        <div class="legend-chip-left">
+          <span class="chip-dot" style="background: ${colors[idx]};"></span>
+          <span class="chip-label">${label}</span>
+        </div>
+        <span class="chip-val">$${Math.round(data[idx]).toLocaleString()}</span>
+      </div>
+    `).join('');
+  }
+}
+
+function setupPitiViewToggle() {
+  const btnText = document.getElementById('btn-piti-view-text');
+  const btnChart = document.getElementById('btn-piti-view-chart');
+  const viewText = document.getElementById('piti-view-text');
+  const viewChart = document.getElementById('piti-view-chart');
+
+  if (btnText && btnChart && viewText && viewChart) {
+    btnText.addEventListener('click', () => {
+      btnText.classList.add('active');
+      btnChart.classList.remove('active');
+      viewText.classList.remove('hidden');
+      viewChart.classList.add('hidden');
+    });
+
+    btnChart.addEventListener('click', () => {
+      btnChart.classList.add('active');
+      btnText.classList.remove('active');
+      viewChart.classList.remove('hidden');
+      viewText.classList.add('hidden');
+      recalculate();
+    });
   }
 }
 
