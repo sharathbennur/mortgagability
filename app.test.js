@@ -360,3 +360,39 @@ describe('5. Terms & Privacy Disclaimer Tests', () => {
     expect(text).toContain('localStorage');
   });
 });
+
+describe('6. Theme Switcher & Persistence Tests', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    document.documentElement.removeAttribute('data-theme');
+  });
+
+  it('should set data-theme attribute on documentElement and update localStorage when setTheme is called', () => {
+    appModule.setTheme('light');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+    expect(localStorage.getItem(appModule.STORAGE_KEYS.THEME)).toBe('light');
+
+    appModule.setTheme('dark');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    expect(localStorage.getItem(appModule.STORAGE_KEYS.THEME)).toBe('dark');
+  });
+
+  it('should toggle theme when toggleTheme is called or theme button is clicked', () => {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    appModule.toggleTheme();
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+    expect(localStorage.getItem(appModule.STORAGE_KEYS.THEME)).toBe('light');
+
+    const btnThemeToggle = document.getElementById('btn-theme-toggle');
+    if (btnThemeToggle) {
+      btnThemeToggle.click();
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    }
+  });
+
+  it('should retrieve saved theme from localStorage on getInitialTheme', () => {
+    localStorage.setItem(appModule.STORAGE_KEYS.THEME, 'light');
+    expect(appModule.getInitialTheme()).toBe('light');
+  });
+});
+
