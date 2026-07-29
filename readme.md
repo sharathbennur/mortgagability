@@ -42,9 +42,9 @@ $$\text{Monthly Home Insurance} = \frac{\text{Home Purchase Price} \times \frac{
 $$\text{Standard Monthly PITI} = M + \text{Monthly Property Tax} + \text{Monthly Home Insurance}$$
 
 ### 4. Extra Monthly Payment for Target Payoff Term
-$$M_{\text{target P\&I}} = P_{\text{rem}} \times \frac{i(1 + i)^{n_{\text{target}}}}{(1 + i)^{n_{\text{target}}} - 1}$$
-$$\text{Extra Monthly Required} = \max(0, M_{\text{target P\&I}} - M)$$
-$$\text{Target Total Monthly PITI} = M_{\text{target P\&I}} + \text{Monthly Property Tax} + \text{Monthly Home Insurance}$$
+$$M_{\text{target P and I}} = P_{\text{rem}} \times \frac{i(1 + i)^{n_{\text{target}}}}{(1 + i)^{n_{\text{target}}} - 1}$$
+$$\text{Extra Monthly Required} = \max(0, M_{\text{target P and I}} - M)$$
+$$\text{Target Total Monthly PITI} = M_{\text{target P and I}} + \text{Monthly Property Tax} + \text{Monthly Home Insurance}$$
 Where:
 - $P_{\text{rem}}$ = Remaining principal to pay off
 - $n_{\text{target}}$ = Target term in months
@@ -54,8 +54,8 @@ $$\text{Closing Costs} = \text{Home Price} \times \frac{\text{Closing Costs Rate
 $$\text{Total Upfront Cash} = \text{Down Payment} + \text{Closing Costs}$$
 
 ### 6. Monthly Budget & Cash Flow (Using PITI)
-$$\text{Net Monthly Cash Flow} = \text{Take-Home Salary} - \text{Monthly Expenses} - (\text{Accelerated P\&I Payment} + \text{Monthly Property Tax} + \text{Monthly Home Insurance})$$
-$$\text{DTI Ratio} = \frac{(\text{Accelerated P\&I Payment} + \text{Monthly Property Tax} + \text{Monthly Home Insurance}) + \text{Monthly Expenses}}{\text{Take-Home Salary}} \times 100$$
+$$\text{Net Monthly Cash Flow} = \text{Take-Home Salary} - \text{Monthly Expenses} - (\text{Accelerated P and I Payment} + \text{Monthly Property Tax} + \text{Monthly Home Insurance})$$
+$$\text{DTI Ratio} = \frac{(\text{Accelerated P and I Payment} + \text{Monthly Property Tax} + \text{Monthly Home Insurance}) + \text{Monthly Expenses}}{\text{Take-Home Salary}} \times 100$$
 
 ## Getting Started
 
