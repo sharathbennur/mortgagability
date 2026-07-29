@@ -77,6 +77,10 @@ const elBtnCloseModal = document.getElementById('btn-close-modal');
 const elBtnCancelModal = document.getElementById('btn-cancel-modal');
 const elBtnConfirmSaveScenario = document.getElementById('btn-confirm-save-scenario');
 
+// Theme Switcher DOM Elements
+const elBtnThemeToggle = document.getElementById('btn-theme-toggle');
+const elThemeToggleIcon = document.getElementById('theme-toggle-icon');
+
 // Terms & Disclaimer Modal DOM Elements
 const elBtnOpenDisclaimer = document.getElementById('btn-open-disclaimer');
 const elModalDisclaimer = document.getElementById('modal-disclaimer');
@@ -85,7 +89,8 @@ const elBtnXCloseDisclaimer = document.getElementById('btn-x-close-disclaimer');
 
 const STORAGE_KEYS = {
   SCENARIOS: 'mortgagability_scenarios',
-  CURRENT_STATE: 'mortgagability_current_state'
+  CURRENT_STATE: 'mortgagability_current_state',
+  THEME: 'mortgagability_theme'
 };
 
 let currentScenarioId = null;
@@ -515,6 +520,70 @@ function updateUI() {
   renderTable();
 }
 
+// ==========================================================================
+// THEME SWITCHER STATE MANAGEMENT
+// ==========================================================================
+
+function getInitialTheme() {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME);
+      if (savedTheme === 'light' || savedTheme === 'dark') {
+        return savedTheme;
+      }
+    }
+    if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+      return 'light';
+    }
+  } catch (e) {
+    // Ignore browser storage/media query access errors
+  }
+  return 'dark';
+}
+
+function setTheme(theme) {
+  const currentTheme = theme === 'light' ? 'light' : 'dark';
+  if (typeof document !== 'undefined' && document.documentElement) {
+    document.documentElement.setAttribute('data-theme', currentTheme);
+  }
+
+  if (elThemeToggleIcon) {
+    if (currentTheme === 'light') {
+      elThemeToggleIcon.className = 'fa-solid fa-sun';
+      if (elThemeToggleIcon.parentElement) {
+        elThemeToggleIcon.parentElement.setAttribute('title', 'Switch to Dark Theme');
+        elThemeToggleIcon.parentElement.setAttribute('aria-label', 'Switch to Dark Theme');
+      }
+    } else {
+      elThemeToggleIcon.className = 'fa-solid fa-moon';
+      if (elThemeToggleIcon.parentElement) {
+        elThemeToggleIcon.parentElement.setAttribute('title', 'Switch to Light Theme');
+        elThemeToggleIcon.parentElement.setAttribute('aria-label', 'Switch to Light Theme');
+      }
+    }
+  }
+
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.THEME, currentTheme);
+    }
+  } catch (e) {
+    // Ignore storage restriction errors
+  }
+
+  if (chartInstance) {
+    renderChart();
+  }
+}
+
+function toggleTheme() {
+  const activeTheme = (typeof document !== 'undefined' && document.documentElement)
+    ? document.documentElement.getAttribute('data-theme') || 'dark'
+    : 'dark';
+  const newTheme = activeTheme === 'light' ? 'dark' : 'light';
+  setTheme(newTheme);
+}
+
 /**
  * Renders the Chart.js visualizer.
  */
@@ -525,6 +594,11 @@ function renderChart() {
   if (chartInstance) {
     chartInstance.destroy();
   }
+
+  const isLight = typeof document !== 'undefined' && document.documentElement && document.documentElement.getAttribute('data-theme') === 'light';
+  const chartTextColor = isLight ? '#334155' : '#f3f4f6';
+  const chartMutedColor = isLight ? '#64748b' : '#9ca3af';
+  const chartGridColor = isLight ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.05)';
 
   const standardData = currentSchedule.standard;
   const acceleratedData = currentSchedule.accelerated;
@@ -596,7 +670,7 @@ function renderChart() {
         {
           label: 'Standard Principal Balance',
           data: standardBalanceDataset,
-          borderColor: '#6366f1', // Indigo
+          borderColor: isLight ? '#4f46e5' : '#6366f1', // Indigo
           backgroundColor: 'transparent',
           fill: false,
           tension: 0.25,
@@ -608,7 +682,7 @@ function renderChart() {
         {
           label: 'Accelerated Cumulative Interest',
           data: acceleratedInterestDataset,
-          borderColor: '#fbbf24', // Amber
+          borderColor: '#f59e0b', // Amber
           backgroundColor: 'transparent',
           fill: false,
           tension: 0.25,
@@ -619,7 +693,7 @@ function renderChart() {
         {
           label: 'Standard Cumulative Interest',
           data: standardInterestDataset,
-          borderColor: '#f43f5e', // Rose
+          borderColor: '#ef4444', // Red
           backgroundColor: 'transparent',
           fill: false,
           tension: 0.25,
@@ -637,7 +711,7 @@ function renderChart() {
         legend: {
           position: 'top',
           labels: {
-            color: '#f3f4f6',
+            color: chartTextColor,
             font: {
               family: 'Plus Jakarta Sans',
               size: 11
@@ -664,10 +738,10 @@ function renderChart() {
       scales: {
         x: {
           grid: {
-            color: 'rgba(255, 255, 255, 0.05)'
+            color: chartGridColor
           },
           ticks: {
-            color: '#9ca3af',
+            color: chartMutedColor,
             font: {
               family: 'Plus Jakarta Sans',
               size: 10
@@ -676,16 +750,16 @@ function renderChart() {
         },
         y: {
           grid: {
-            color: 'rgba(255, 255, 255, 0.05)'
+            color: chartGridColor
           },
           ticks: {
-            color: '#9ca3af',
+            color: chartMutedColor,
             font: {
               family: 'Plus Jakarta Sans',
               size: 10
             },
             callback: function(value) {
-              return '$' + value.toLocaleString();
+              return '$' + (value / 1000).toFixed(0) + 'k';
             }
           }
         }
@@ -1565,6 +1639,10 @@ function setupEventHandlers() {
       }
     });
   }
+
+  if (elBtnThemeToggle) {
+    elBtnThemeToggle.addEventListener('click', toggleTheme);
+  }
 }
 
 // ==========================================================================
@@ -1572,6 +1650,9 @@ function setupEventHandlers() {
 // ==========================================================================
 
 function init() {
+  // Initialize theme setting from saved preference or OS default
+  setTheme(getInitialTheme());
+
   // Set up range limits dynamic maxes
   const initialPrice = parseFloat(elHomePrice.value) || 450000;
   elDownPaymentSlider.max = initialPrice;
@@ -1609,5 +1690,8 @@ export {
   deleteScenario,
   getSavedScenarios,
   restoreCurrentState,
+  getInitialTheme,
+  setTheme,
+  toggleTheme,
   STORAGE_KEYS
 };
