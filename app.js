@@ -713,6 +713,10 @@ function updateUI() {
   // Update Milestone Event Summary Badges
   updateMilestoneSummaryStrip();
 
+  // Update Accordion Summary Badges & Mobile Floating Summary Bar
+  updateAccordionSummaries();
+  updateMobileSummaryBar(totalMonthlyPITIWithExtra, termStr, netCashFlow);
+
   // Re-render chart and table
   renderChart();
   renderTable();
@@ -1341,6 +1345,13 @@ function serializeCurrentState() {
   };
 }
 
+function setArmSettingsPanelVisible(show) {
+  const armPanel = document.getElementById('arm-settings-panel');
+  const armAccordionGroup = document.getElementById('accordion-arm-group');
+  if (armPanel) armPanel.style.display = show ? 'flex' : 'none';
+  if (armAccordionGroup) armAccordionGroup.style.display = show ? 'block' : 'none';
+}
+
 function applyStateObject(state) {
   if (!state) return;
 
@@ -1411,10 +1422,8 @@ function applyStateObject(state) {
     isArmLoan = state.isArmLoan;
   }
 
-  if (elArmSettingsPanel) {
-    const isArm = isArmLoan || (activeLoanPreset && activeLoanPreset.endsWith('-arm'));
-    elArmSettingsPanel.style.display = isArm ? 'flex' : 'none';
-  }
+  const isArm = isArmLoan || (activeLoanPreset && activeLoanPreset.endsWith('-arm'));
+  setArmSettingsPanelVisible(isArm);
 
   if (state.armFixedTerm !== undefined && elArmFixedTerm && elArmFixedTermSlider) {
     elArmFixedTerm.value = state.armFixedTerm;
@@ -1653,13 +1662,13 @@ function setupEventHandlers() {
         isArmLoan = false;
         elLoanTerm.value = 30;
         elTermSlider.value = 30;
-        if (elArmSettingsPanel) elArmSettingsPanel.style.display = 'none';
+        setArmSettingsPanelVisible(false);
         if (elLabelInterestRate) elLabelInterestRate.textContent = 'Interest Rate';
       } else if (preset === '15-fixed') {
         isArmLoan = false;
         elLoanTerm.value = 15;
         elTermSlider.value = 15;
-        if (elArmSettingsPanel) elArmSettingsPanel.style.display = 'none';
+        setArmSettingsPanelVisible(false);
         if (elLabelInterestRate) elLabelInterestRate.textContent = 'Interest Rate';
       } else if (preset === '5-arm') {
         isArmLoan = true;
@@ -1669,7 +1678,7 @@ function setupEventHandlers() {
           elArmFixedTerm.value = 5;
           elArmFixedTermSlider.value = 5;
         }
-        if (elArmSettingsPanel) elArmSettingsPanel.style.display = 'flex';
+        setArmSettingsPanelVisible(true);
         if (elLabelInterestRate) elLabelInterestRate.textContent = 'Initial Rate';
       } else if (preset === '7-arm') {
         isArmLoan = true;
@@ -1679,7 +1688,7 @@ function setupEventHandlers() {
           elArmFixedTerm.value = 7;
           elArmFixedTermSlider.value = 7;
         }
-        if (elArmSettingsPanel) elArmSettingsPanel.style.display = 'flex';
+        setArmSettingsPanelVisible(true);
         if (elLabelInterestRate) elLabelInterestRate.textContent = 'Initial Rate';
       } else if (preset === '10-arm') {
         isArmLoan = true;
@@ -1689,10 +1698,10 @@ function setupEventHandlers() {
           elArmFixedTerm.value = 10;
           elArmFixedTermSlider.value = 10;
         }
-        if (elArmSettingsPanel) elArmSettingsPanel.style.display = 'flex';
+        setArmSettingsPanelVisible(true);
         if (elLabelInterestRate) elLabelInterestRate.textContent = 'Initial Rate';
       } else if (preset === 'custom') {
-        if (elArmSettingsPanel) elArmSettingsPanel.style.display = isArmLoan ? 'flex' : 'none';
+        setArmSettingsPanelVisible(isArmLoan);
       }
 
       recalculate();
@@ -2518,6 +2527,107 @@ function setupHelpHandlers() {
 }
 
 // ==========================================================================
+// ACCORDION PANELS & MOBILE SUMMARY BAR LOGIC
+// ==========================================================================
+
+function setupAccordionHandlers() {
+  const container = document.querySelector('.accordion-container');
+  if (container && container.dataset.accordionBound !== 'true') {
+    container.dataset.accordionBound = 'true';
+    container.addEventListener('click', (e) => {
+      const header = e.target.closest('.accordion-header');
+      if (!header) return;
+
+      const group = header.closest('.accordion-group');
+      if (group) {
+        const isOpen = group.classList.contains('open');
+        if (isOpen) {
+          group.classList.remove('open');
+          header.setAttribute('aria-expanded', 'false');
+        } else {
+          group.classList.add('open');
+          header.setAttribute('aria-expanded', 'true');
+        }
+      }
+    });
+  }
+
+  const btnJumpChart = document.getElementById('btn-mobile-jump-chart');
+  if (btnJumpChart && btnJumpChart.dataset.bound !== 'true') {
+    btnJumpChart.dataset.bound = 'true';
+    btnJumpChart.addEventListener('click', () => {
+      const chartSection = document.querySelector('.chart-panel') || document.getElementById('payoff-chart');
+      if (chartSection) {
+        chartSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  }
+}
+
+function updateAccordionSummaries() {
+  const badgeLoan = document.getElementById('badge-summary-loan');
+  const badgeArm = document.getElementById('badge-summary-arm');
+  const badgeBudget = document.getElementById('badge-summary-budget');
+  const badgePayoff = document.getElementById('badge-summary-payoff');
+
+  const homePrice = parseFloat(elHomePrice.value) || 0;
+  const rate = parseFloat(elInterestRate.value) || 0;
+  const term = parseInt(elLoanTerm.value, 10) || 30;
+
+  const activePresetBtn = document.querySelector('.btn-preset.active');
+  const presetType = activePresetBtn ? activePresetBtn.getAttribute('data-preset') : '';
+
+  if (badgeLoan) {
+    const formattedPrice = homePrice >= 1000000 ? `$${(homePrice / 1000000).toFixed(2)}M` : `$${Math.round(homePrice / 1000)}k`;
+    let typeLabel = `${term}Y Fixed`;
+    if (presetType && presetType.includes('arm')) {
+      typeLabel = `${presetType.replace('-arm', '/1')} ARM`;
+    }
+    badgeLoan.textContent = `${formattedPrice} | ${typeLabel} @ ${rate}%`;
+  }
+
+  if (badgeArm) {
+    const fixedYrs = parseInt(document.getElementById('arm-fixed-term')?.value, 10) || 5;
+    const resetRate = parseFloat(document.getElementById('arm-adjusted-rate')?.value) || 7.5;
+    badgeArm.textContent = `Fixed ${fixedYrs}Y @ ${rate}% → Reset ${resetRate}%`;
+  }
+
+  if (badgeBudget) {
+    const salary = parseFloat(elTakeHomeSalary.value) || 0;
+    const exp = parseFloat(elMonthlyExpenses.value) || 0;
+    const fmtSalary = salary >= 1000 ? `$${(salary / 1000).toFixed(1)}k` : `$${salary}`;
+    const fmtExp = exp >= 1000 ? `$${(exp / 1000).toFixed(1)}k` : `$${exp}`;
+    badgeBudget.textContent = `${fmtSalary} Salary | ${fmtExp} Exp`;
+  }
+
+  if (badgePayoff) {
+    const extraMo = parseFloat(elExtraMonthly.value) || 0;
+    const oneTime = parseFloat(elOneTimeExtra.value) || 0;
+    const parts = [];
+    if (extraMo > 0) parts.push(`+$${extraMo}/mo`);
+    if (oneTime > 0) parts.push(`$${oneTime >= 1000 ? (oneTime / 1000).toFixed(0) + 'k' : oneTime} Lump`);
+    badgePayoff.textContent = parts.length > 0 ? parts.join(' | ') : '$0 Extra';
+  }
+}
+
+function updateMobileSummaryBar(monthlyPiti, termStr, netCashFlow) {
+  const elMobilePiti = document.getElementById('mobile-kpi-piti');
+  const elMobileTerm = document.getElementById('mobile-kpi-term');
+  const elMobileCashflow = document.getElementById('mobile-kpi-cashflow');
+
+  if (elMobilePiti) elMobilePiti.textContent = formatCurrency(monthlyPiti);
+  if (elMobileTerm) elMobileTerm.textContent = termStr || '0 Mos';
+  if (elMobileCashflow) {
+    elMobileCashflow.textContent = formatCurrency(netCashFlow);
+    if (netCashFlow >= 0) {
+      elMobileCashflow.className = 'mobile-metric-val success';
+    } else {
+      elMobileCashflow.className = 'mobile-metric-val danger';
+    }
+  }
+}
+
+// ==========================================================================
 // APPLICATION INITIALIZATION
 // ==========================================================================
 
@@ -2533,6 +2643,7 @@ function init() {
   // Initialize event handlers
   setupEventHandlers();
   setupHelpHandlers();
+  setupAccordionHandlers();
 
   // Restore saved scenarios list and last active session state
   restoreCurrentState();
@@ -2577,5 +2688,8 @@ export {
   closeHelpModal,
   setupHelpHandlers,
   setZoomPreset,
-  getActiveZoomPreset
+  getActiveZoomPreset,
+  setupAccordionHandlers,
+  updateAccordionSummaries,
+  updateMobileSummaryBar
 };

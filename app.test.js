@@ -926,4 +926,113 @@ describe('14. Amortization Chart Zoom Presets & Payoff Milestone Event Flags', (
   });
 });
 
+describe('15. Collapsible Accordion Input Panels & Mobile Floating Summary Bar', () => {
+  it('should toggle accordion section open/collapsed state when header is clicked', () => {
+    appModule.init();
+    const loanGroup = document.getElementById('accordion-loan-group');
+    const loanHeader = loanGroup.querySelector('.accordion-header');
+
+    expect(loanGroup.classList.contains('open')).toBe(true);
+    expect(loanHeader.getAttribute('aria-expanded')).toBe('true');
+
+    // Click header to collapse
+    loanHeader.click();
+    expect(loanGroup.classList.contains('open')).toBe(false);
+    expect(loanHeader.getAttribute('aria-expanded')).toBe('false');
+
+    // Click header again to expand
+    loanHeader.click();
+    expect(loanGroup.classList.contains('open')).toBe(true);
+    expect(loanHeader.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('should dynamically update accordion summary badges when input parameters change', () => {
+    appModule.init();
+
+    document.getElementById('home-price').value = '600000';
+    document.getElementById('interest-rate').value = '7.0';
+    document.getElementById('loan-term').value = '15';
+    document.getElementById('take-home-salary').value = '12000';
+    document.getElementById('monthly-expenses').value = '4000';
+    document.getElementById('extra-monthly').value = '500';
+
+    appModule.recalculate();
+
+    const badgeLoan = document.getElementById('badge-summary-loan');
+    const badgeBudget = document.getElementById('badge-summary-budget');
+    const badgePayoff = document.getElementById('badge-summary-payoff');
+
+    expect(badgeLoan.textContent).toContain('$600k');
+    expect(badgeLoan.textContent).toContain('7%');
+    expect(badgeBudget.textContent).toContain('$12.0k Salary');
+    expect(badgeBudget.textContent).toContain('$4.0k Exp');
+    expect(badgePayoff.textContent).toContain('+$500/mo');
+  });
+
+  it('should toggle ARM accordion group visibility when switching between fixed and ARM loans', () => {
+    localStorage.clear();
+    appModule.init();
+
+    // Ensure initial 30-yr fixed preset is active
+    const btn30Fixed = document.querySelector('.btn-preset[data-preset="30-fixed"]');
+    if (btn30Fixed) btn30Fixed.click();
+
+    const armGroup = document.getElementById('accordion-arm-group');
+    expect(armGroup.style.display).toBe('none');
+
+    // Click 5/1 ARM preset
+    const btn5Arm = document.querySelector('.btn-preset[data-preset="5-arm"]');
+    if (btn5Arm) btn5Arm.click();
+
+    expect(armGroup.style.display).toBe('block');
+
+    // Click 30-Yr Fixed preset
+    if (btn30Fixed) btn30Fixed.click();
+
+    expect(armGroup.style.display).toBe('none');
+  });
+
+  it('should update mobile summary bar metrics with Net Cash Flow color coding', () => {
+    appModule.init();
+
+    document.getElementById('take-home-salary').value = '10000';
+    document.getElementById('monthly-expenses').value = '2000';
+
+    appModule.recalculate();
+
+    const elMobilePiti = document.getElementById('mobile-kpi-piti');
+    const elMobileTerm = document.getElementById('mobile-kpi-term');
+    const elMobileCashflow = document.getElementById('mobile-kpi-cashflow');
+
+    expect(elMobilePiti).not.toBeNull();
+    expect(elMobilePiti.textContent).not.toBe('$0/mo');
+    expect(elMobileTerm.textContent).not.toBe('0 Mos');
+    expect(elMobileCashflow.textContent).not.toBe('$0/mo');
+    expect(elMobileCashflow.classList.contains('success')).toBe(true);
+
+    // Set expenses high to trigger negative net cash flow
+    document.getElementById('monthly-expenses').value = '15000';
+    appModule.recalculate();
+
+    expect(elMobileCashflow.classList.contains('danger')).toBe(true);
+  });
+
+  it('should handle mobile jump to chart button scroll interaction', () => {
+    appModule.init();
+
+    const btnJump = document.getElementById('btn-mobile-jump-chart');
+    expect(btnJump).not.toBeNull();
+
+    const scrollSpy = vi.fn();
+    const chartPanel = document.querySelector('.chart-panel');
+    if (chartPanel) {
+      chartPanel.scrollIntoView = scrollSpy;
+    }
+
+    btnJump.click();
+    expect(scrollSpy).toHaveBeenCalled();
+  });
+});
+
+
 
