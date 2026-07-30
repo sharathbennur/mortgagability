@@ -496,6 +496,7 @@ body {
   box-shadow: var(--shadow-lg);
   width: 100%;
   max-width: 480px;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -548,6 +549,9 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .modal-body textarea {
@@ -1071,8 +1075,8 @@ input[type=number] {
 
 .dti-gauge-wrapper {
   position: relative;
-  width: 84px;
-  height: 84px;
+  width: 115px;
+  height: 115px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -1119,13 +1123,13 @@ input[type=number] {
 
 .dti-gauge-value {
   font-family: var(--font-display);
-  font-size: 1.1rem;
+  font-size: 1.4rem;
   font-weight: 800;
   color: var(--text-primary);
 }
 
 .dti-gauge-sublabel {
-  font-size: 0.58rem;
+  font-size: 0.65rem;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -1443,8 +1447,8 @@ input[type=number] {
 
 .donut-chart-wrapper {
   position: relative;
-  width: 90px;
-  height: 90px;
+  width: 115px;
+  height: 115px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -1464,14 +1468,14 @@ input[type=number] {
 
 .donut-total-val {
   font-family: var(--font-display);
-  font-size: 0.90rem;
+  font-size: 1.15rem;
   font-weight: 800;
   color: var(--text-primary);
   letter-spacing: -0.01em;
 }
 
 .donut-total-sub {
-  font-size: 0.55rem;
+  font-size: 0.65rem;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
