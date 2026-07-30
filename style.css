@@ -896,13 +896,15 @@ input[type=number] {
 
 /* Loan Amount Badge */
 .loan-amount-badge {
-  background: rgba(99, 102, 241, 0.1);
+  background: rgba(99, 102, 241, 0.08);
   border: 1px solid rgba(99, 102, 241, 0.2);
-  border-radius: 8px;
-  padding: 12px;
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin-top: 20px;
+  margin-bottom: 24px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   font-size: 0.9rem;
 }
 
@@ -2605,3 +2607,254 @@ input[type=number] {
   animation: term-pulse 1.8s ease-in-out infinite;
   border-color: var(--primary) !important;
 }
+
+/* ==========================================================================
+   Accordion Input Panels & Collapsible Sections
+   ========================================================================== */
+.accordion-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.accordion-group {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-card);
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.accordion-group:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.accordion-header {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.02);
+  border: none;
+  color: var(--text-main);
+  cursor: pointer;
+  text-align: left;
+  user-select: none;
+  transition: background 0.2s ease;
+}
+
+[data-theme="light"] .accordion-header {
+  background: #f8fafc;
+}
+
+.accordion-header:hover {
+  background: rgba(99, 102, 241, 0.06);
+}
+
+.accordion-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.accordion-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.accordion-title i {
+  color: var(--primary);
+  font-size: 1.1rem;
+}
+
+.accordion-title h2 {
+  font-size: 1.05rem;
+  margin: 0;
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.accordion-icon {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-left: 8px;
+}
+
+.accordion-group.open .accordion-icon {
+  transform: rotate(180deg);
+}
+
+.accordion-summary-row {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+  width: 100%;
+  transition: opacity 0.2s ease, max-height 0.2s ease;
+}
+
+/* Summary chip is ONLY visible when the panel is closed */
+.accordion-group.open .accordion-summary-row {
+  display: none;
+}
+
+.accordion-summary-badge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: opacity 0.2s ease;
+}
+
+[data-theme="light"] .accordion-summary-badge {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+.accordion-body {
+  display: none;
+  padding: 18px;
+  border-top: 1px solid var(--border-color);
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.accordion-group.open .accordion-body {
+  display: block;
+}
+
+.accordion-group.open .accordion-summary-badge {
+  opacity: 0.6;
+}
+
+/* Adjust padding on mobile for accordions */
+@media (max-width: 768px) {
+  .accordion-header {
+    padding: 12px 14px;
+  }
+  .accordion-summary-badge {
+    max-width: 100%;
+    font-size: 0.7rem;
+    padding: 3px 8px;
+  }
+  .accordion-body {
+    padding: 14px 12px;
+  }
+}
+
+/* ==========================================================================
+   Sticky Floating Summary Bar (Always Visible Footer for Desktop & Mobile)
+   ========================================================================== */
+.mobile-summary-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 48px);
+  max-width: 1440px;
+  z-index: 9999;
+  padding: 12px 24px;
+  background: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="light"] .mobile-summary-bar {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.12);
+}
+
+.mobile-summary-content {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  overflow-x: auto;
+}
+
+.mobile-summary-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mobile-metric-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+.mobile-metric-val {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+}
+
+.mobile-metric-val.success {
+  color: var(--success);
+}
+
+.mobile-metric-val.danger {
+  color: var(--danger);
+}
+
+.mobile-jump-btn {
+  flex-shrink: 0;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+}
+
+/* Leave margin at bottom of page content so sticky footer doesn't obscure content */
+body {
+  padding-bottom: 80px;
+}
+
+@media (max-width: 768px) {
+  .mobile-summary-bar {
+    bottom: 0;
+    left: 0;
+    right: 0;
+    transform: none;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    padding: 10px 14px;
+  }
+  .mobile-summary-content {
+    gap: 14px;
+  }
+  .mobile-metric-val {
+    font-size: 0.85rem;
+  }
+  .mobile-jump-btn {
+    padding: 5px 12px;
+    font-size: 0.72rem;
+  }
+}
+

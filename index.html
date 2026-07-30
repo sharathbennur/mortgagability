@@ -1,24 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mortgage-Abilty.com — Premium Mortgage &amp; Payoff Calculator</title>
-  
+
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
+
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
+
   <!-- Styling -->
   <link rel="stylesheet" href="/style.css">
 </head>
+
 <body>
   <div class="app-container">
     <!-- Header -->
@@ -28,7 +32,7 @@
           <i class="fa-solid fa-house-laptop"></i>
           <h1>Mortgage-Abilty<span style="color: var(--primary);">.com</span></h1>
         </div>
-        <p class="header-subtitle">Visualize, optimize, and accelerate your mortgage amortization</p>
+        <p class="header-subtitle">Optimize and accelerate your mortgage</p>
       </div>
 
       <!-- Top Navbar Scenario Toolbar -->
@@ -44,17 +48,21 @@
               <option value="">-- Saved Scenarios --</option>
             </select>
           </div>
-          <button type="button" id="btn-save-scenario" class="btn btn-sm btn-primary btn-save-scenario" title="Save Current State as Scenario">
+          <button type="button" id="btn-save-scenario" class="btn btn-sm btn-primary btn-save-scenario"
+            title="Save Current State as Scenario">
             <i class="fa-solid fa-bookmark"></i>
             <span>Save Scenario</span>
           </button>
-          <button type="button" id="btn-delete-scenario" class="btn btn-xs btn-outline btn-delete-scenario" title="Delete Selected Scenario" disabled>
+          <button type="button" id="btn-delete-scenario" class="btn btn-xs btn-outline btn-delete-scenario"
+            title="Delete Selected Scenario" disabled>
             <i class="fa-solid fa-trash-can"></i>
           </button>
-          <button type="button" id="btn-theme-toggle" class="btn btn-xs btn-outline btn-theme-toggle" title="Toggle Light/Dark Theme" aria-label="Toggle Light/Dark Theme">
+          <button type="button" id="btn-theme-toggle" class="btn btn-xs btn-outline btn-theme-toggle"
+            title="Toggle Light/Dark Theme" aria-label="Toggle Light/Dark Theme">
             <i class="fa-solid fa-moon" id="theme-toggle-icon"></i>
           </button>
-          <button type="button" id="btn-help-glossary" class="btn btn-xs btn-outline btn-help-glossary" title="Open Help & Glossary" aria-label="Open Help & Glossary">
+          <button type="button" id="btn-help-glossary" class="btn btn-xs btn-outline btn-help-glossary"
+            title="Open Help & Glossary" aria-label="Open Help & Glossary">
             <i class="fa-solid fa-circle-question"></i> Help &amp; Glossary
           </button>
         </div>
@@ -72,274 +80,365 @@
 
     <!-- Main Content Grid -->
     <main class="dashboard-grid">
-      
+
       <!-- Left Panel: Inputs -->
       <section class="panel inputs-panel">
-        <div class="panel-header">
-          <i class="fa-solid fa-sliders"></i>
-          <h2>Loan Parameters</h2>
-        </div>
-        
-        <form id="mortgage-form" class="form-grid" onsubmit="event.preventDefault();">
-          <!-- House Cost -->
-          <div class="input-group">
-            <label for="home-price">Home Purchase Price <i class="fa-solid fa-circle-info info-icon" data-term="home-price" title="Click for plain-English explanation" role="button" tabindex="0"></i></label>
-            <div class="input-wrapper prefix">
-              <span class="input-addon">$</span>
-              <input type="number" id="home-price" value="450000" min="10000" max="10000000" step="5000">
-            </div>
-            <input type="range" id="home-price-slider" min="50000" max="2000000" step="10000" value="450000" class="slider">
-          </div>
+        <form id="mortgage-form" class="accordion-container" onsubmit="event.preventDefault();">
 
-          <!-- Down Payment -->
-          <div class="input-group-row">
-            <div class="input-group width-65">
-              <label for="down-payment">Down Payment <i class="fa-solid fa-circle-info info-icon" data-term="down-payment" title="Click for plain-English explanation" role="button" tabindex="0"></i></label>
-              <div class="input-wrapper prefix">
-                <span class="input-addon">$</span>
-                <input type="number" id="down-payment" value="90000" min="0" max="10000000" step="1000">
+          <!-- Accordion 1: Loan & Property Parameters -->
+          <div class="accordion-group open" id="accordion-loan-group">
+            <button type="button" class="accordion-header" aria-expanded="true" aria-controls="accordion-loan-body">
+              <div class="accordion-header-top">
+                <div class="accordion-title">
+                  <i class="fa-solid fa-sliders"></i>
+                  <h2>Loan Parameters</h2>
+                </div>
+                <i class="fa-solid fa-chevron-down accordion-icon"></i>
               </div>
-            </div>
-            <div class="input-group width-35">
-              <label for="down-payment-percent">Percent</label>
-              <div class="input-wrapper suffix">
-                <input type="number" id="down-payment-percent" value="20" min="0" max="99" step="0.1">
-                <span class="input-addon">%</span>
+              <div class="accordion-summary-row">
+                <span class="accordion-summary-badge" id="badge-summary-loan">$450k | 30Y Fixed @ 6.5%</span>
               </div>
-            </div>
-          </div>
-          <div class="input-group">
-            <input type="range" id="down-payment-slider" min="0" max="400000" step="5000" value="90000" class="slider">
-          </div>
+            </button>
+            <div class="accordion-body" id="accordion-loan-body">
+              <!-- House Cost -->
+              <div class="input-group">
+                <label for="home-price">Home Purchase Price <i class="fa-solid fa-circle-info info-icon"
+                    data-term="home-price" title="Click for plain-English explanation" role="button"
+                    tabindex="0"></i></label>
+                <div class="input-wrapper prefix">
+                  <span class="input-addon">$</span>
+                  <input type="number" id="home-price" value="450000" min="10000" max="10000000" step="5000">
+                </div>
+                <input type="range" id="home-price-slider" min="50000" max="2000000" step="10000" value="450000"
+                  class="slider">
+              </div>
 
-          <!-- Closing Costs -->
-          <div class="input-group-row">
-            <div class="input-group width-65">
-              <label for="closing-costs">Est. Closing Costs <i class="fa-solid fa-circle-info info-icon" data-term="closing-costs" title="Click for plain-English explanation" role="button" tabindex="0"></i></label>
-              <div class="input-wrapper prefix">
-                <span class="input-addon">$</span>
-                <input type="number" id="closing-costs" value="13500" min="0" max="1000000" step="100">
-              </div>
-            </div>
-            <div class="input-group width-35">
-              <label for="closing-costs-percent">Rate</label>
-              <div class="input-wrapper suffix">
-                <input type="number" id="closing-costs-percent" value="3.0" min="0" max="20" step="0.1">
-                <span class="input-addon">%</span>
-              </div>
-            </div>
-          </div>
-          <div class="input-group">
-            <input type="range" id="closing-costs-slider" min="0" max="100000" step="500" value="13500" class="slider">
-          </div>
-
-          <!-- Loan Amount & Upfront Cash Display (Read Only) -->
-          <div class="loan-amount-badge">
-            <div class="badge-row">
-              <span>Loan Principal Amount: <i class="fa-solid fa-circle-info info-icon" data-term="loan-principal" title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
-              <strong id="loan-amount-display">$360,000</strong>
-            </div>
-            <div class="badge-row" style="margin-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 8px;">
-              <span>Total Upfront Cash: <i class="fa-solid fa-circle-info info-icon" data-term="upfront-cash" title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
-              <strong id="total-cash-display" style="color: var(--success);">$103,500</strong>
-            </div>
-          </div>
-
-          <!-- Interest Rate, Term & Loan Type Presets -->
-          <div class="input-group">
-            <label>Loan Type & Structure <i class="fa-solid fa-circle-info info-icon" data-term="loan-type" title="Click for plain-English explanation" role="button" tabindex="0"></i></label>
-            <div class="loan-preset-grid" id="loan-preset-container">
-              <button type="button" class="btn btn-preset active" data-preset="30-fixed">30-Yr Fixed</button>
-              <button type="button" class="btn btn-preset" data-preset="15-fixed">15-Yr Fixed</button>
-              <button type="button" class="btn btn-preset" data-preset="5-arm">5/1 ARM</button>
-              <button type="button" class="btn btn-preset" data-preset="7-arm">7/1 ARM</button>
-              <button type="button" class="btn btn-preset" data-preset="10-arm">10/1 ARM</button>
-              <button type="button" class="btn btn-preset" data-preset="custom">Custom</button>
-            </div>
-          </div>
-
-          <div class="input-group-row">
-            <div class="input-group width-50">
-              <label for="interest-rate" id="label-interest-rate">Interest Rate <i class="fa-solid fa-circle-info info-icon" data-term="interest-rate" title="Click for plain-English explanation" role="button" tabindex="0"></i></label>
-              <div class="input-wrapper suffix">
-                <input type="number" id="interest-rate" value="6.5" min="0.1" max="25" step="0.01">
-                <span class="input-addon">%</span>
-              </div>
-            </div>
-            <div class="input-group width-50">
-              <label for="loan-term">Loan Term <i class="fa-solid fa-circle-info info-icon" data-term="loan-term" title="Click for plain-English explanation" role="button" tabindex="0"></i></label>
-              <div class="input-wrapper suffix">
-                <input type="number" id="loan-term" value="30" min="1" max="50" step="1">
-                <span class="input-addon">Yrs</span>
-              </div>
-            </div>
-          </div>
-          
-          <div class="input-group-row">
-            <div class="width-50 slider-wrapper">
-              <input type="range" id="interest-slider" min="1" max="15" step="0.1" value="6.5" class="slider">
-            </div>
-            <div class="width-50 slider-wrapper">
-              <input type="range" id="term-slider" min="5" max="40" step="5" value="30" class="slider">
-            </div>
-          </div>
-
-          <!-- ARM Settings Panel (Shown when ARM loan type is selected) -->
-          <div id="arm-settings-panel" class="arm-settings-panel" style="display: none;">
-            <div class="arm-header">
-              <i class="fa-solid fa-clock-rotate-left"></i>
-              <span>ARM Adjustment Parameters <i class="fa-solid fa-circle-info info-icon" data-term="arm-loan" title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
-            </div>
-            <div class="input-group-row">
-              <div class="input-group width-50">
-                <label for="arm-fixed-term">Initial Fixed Period <i class="fa-solid fa-circle-info info-icon" data-term="arm-fixed-term" title="Click for plain-English explanation" role="button" tabindex="0"></i></label>
-                <div class="input-wrapper suffix">
-                  <input type="number" id="arm-fixed-term" value="5" min="1" max="10" step="1">
-                  <span class="input-addon">Yrs</span>
+              <!-- Down Payment -->
+              <div class="input-group-row">
+                <div class="input-group width-65">
+                  <label for="down-payment">Down Payment <i class="fa-solid fa-circle-info info-icon"
+                      data-term="down-payment" title="Click for plain-English explanation" role="button"
+                      tabindex="0"></i></label>
+                  <div class="input-wrapper prefix">
+                    <span class="input-addon">$</span>
+                    <input type="number" id="down-payment" value="90000" min="0" max="10000000" step="1000">
+                  </div>
+                </div>
+                <div class="input-group width-35">
+                  <label for="down-payment-percent">Percent</label>
+                  <div class="input-wrapper suffix">
+                    <input type="number" id="down-payment-percent" value="20" min="0" max="99" step="0.1">
+                    <span class="input-addon">%</span>
+                  </div>
                 </div>
               </div>
-              <div class="input-group width-50">
-                <label for="arm-adjusted-rate">Expected Reset Rate <i class="fa-solid fa-circle-info info-icon" data-term="arm-adjusted-rate" title="Click for plain-English explanation" role="button" tabindex="0"></i></label>
-                <div class="input-wrapper suffix">
-                  <input type="number" id="arm-adjusted-rate" value="7.5" min="0.1" max="25" step="0.01">
-                  <span class="input-addon">%</span>
+              <div class="input-group">
+                <input type="range" id="down-payment-slider" min="0" max="400000" step="5000" value="90000"
+                  class="slider">
+              </div>
+
+              <!-- Closing Costs -->
+              <div class="input-group-row">
+                <div class="input-group width-65">
+                  <label for="closing-costs">Est. Closing Costs <i class="fa-solid fa-circle-info info-icon"
+                      data-term="closing-costs" title="Click for plain-English explanation" role="button"
+                      tabindex="0"></i></label>
+                  <div class="input-wrapper prefix">
+                    <span class="input-addon">$</span>
+                    <input type="number" id="closing-costs" value="13500" min="0" max="1000000" step="100">
+                  </div>
+                </div>
+                <div class="input-group width-35">
+                  <label for="closing-costs-percent">Rate</label>
+                  <div class="input-wrapper suffix">
+                    <input type="number" id="closing-costs-percent" value="3.0" min="0" max="20" step="0.1">
+                    <span class="input-addon">%</span>
+                  </div>
+                </div>
+              </div>
+              <div class="input-group">
+                <input type="range" id="closing-costs-slider" min="0" max="100000" step="500" value="13500"
+                  class="slider">
+              </div>
+
+              <!-- Loan Amount & Upfront Cash Display (Read Only) -->
+              <div class="loan-amount-badge">
+                <div class="badge-row">
+                  <span>Loan Principal Amount: <i class="fa-solid fa-circle-info info-icon" data-term="loan-principal"
+                      title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
+                  <strong id="loan-amount-display">$360,000</strong>
+                </div>
+                <div class="badge-row"
+                  style="margin-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 8px;">
+                  <span>Total Upfront Cash: <i class="fa-solid fa-circle-info info-icon" data-term="upfront-cash"
+                      title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
+                  <strong id="total-cash-display" style="color: var(--success);">$103,500</strong>
+                </div>
+              </div>
+
+              <!-- Interest Rate, Term & Loan Type Presets -->
+              <div class="input-group">
+                <label>Loan Type & Structure <i class="fa-solid fa-circle-info info-icon" data-term="loan-type"
+                    title="Click for plain-English explanation" role="button" tabindex="0"></i></label>
+                <div class="loan-preset-grid" id="loan-preset-container">
+                  <button type="button" class="btn btn-preset active" data-preset="30-fixed">30-Yr Fixed</button>
+                  <button type="button" class="btn btn-preset" data-preset="15-fixed">15-Yr Fixed</button>
+                  <button type="button" class="btn btn-preset" data-preset="5-arm">5/1 ARM</button>
+                  <button type="button" class="btn btn-preset" data-preset="7-arm">7/1 ARM</button>
+                  <button type="button" class="btn btn-preset" data-preset="10-arm">10/1 ARM</button>
+                  <button type="button" class="btn btn-preset" data-preset="custom">Custom</button>
+                </div>
+              </div>
+
+              <div class="input-group-row">
+                <div class="input-group width-50">
+                  <label for="interest-rate" id="label-interest-rate">Interest Rate <i
+                      class="fa-solid fa-circle-info info-icon" data-term="interest-rate"
+                      title="Click for plain-English explanation" role="button" tabindex="0"></i></label>
+                  <div class="input-wrapper suffix">
+                    <input type="number" id="interest-rate" value="6.5" min="0.1" max="25" step="0.01">
+                    <span class="input-addon">%</span>
+                  </div>
+                </div>
+                <div class="input-group width-50">
+                  <label for="loan-term">Loan Term <i class="fa-solid fa-circle-info info-icon" data-term="loan-term"
+                      title="Click for plain-English explanation" role="button" tabindex="0"></i></label>
+                  <div class="input-wrapper suffix">
+                    <input type="number" id="loan-term" value="30" min="1" max="50" step="1">
+                    <span class="input-addon">Yrs</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="input-group-row">
+                <div class="width-50 slider-wrapper">
+                  <input type="range" id="interest-slider" min="1" max="15" step="0.1" value="6.5" class="slider">
+                </div>
+                <div class="width-50 slider-wrapper">
+                  <input type="range" id="term-slider" min="5" max="40" step="5" value="30" class="slider">
+                </div>
+              </div>
+
+              <!-- Taxes & Insurance -->
+              <div class="input-group-row">
+                <div class="input-group width-50">
+                  <label for="property-tax">Property Tax Rate <i class="fa-solid fa-circle-info info-icon"
+                      data-term="property-tax" title="Click for plain-English explanation" role="button"
+                      tabindex="0"></i></label>
+                  <div class="input-wrapper suffix">
+                    <input type="number" id="property-tax" value="0.9" min="0" max="10" step="0.05">
+                    <span class="input-addon">%</span>
+                  </div>
+                </div>
+                <div class="input-group width-50">
+                  <label for="home-insurance">Home Insurance Rate <i class="fa-solid fa-circle-info info-icon"
+                      data-term="home-insurance" title="Click for plain-English explanation" role="button"
+                      tabindex="0"></i></label>
+                  <div class="input-wrapper suffix">
+                    <input type="number" id="home-insurance" value="0.5" min="0" max="5" step="0.05">
+                    <span class="input-addon">%</span>
+                  </div>
+                </div>
+              </div>
+              <div class="input-group-row">
+                <div class="width-50 slider-wrapper">
+                  <input type="range" id="property-tax-slider" min="0" max="5" step="0.05" value="0.9" class="slider">
+                </div>
+                <div class="width-50 slider-wrapper">
+                  <input type="range" id="home-insurance-slider" min="0" max="3" step="0.05" value="0.5" class="slider">
                 </div>
               </div>
             </div>
-            <div class="input-group-row">
-              <div class="width-50 slider-wrapper">
-                <input type="range" id="arm-fixed-term-slider" min="1" max="10" step="1" value="5" class="slider">
-              </div>
-              <div class="width-50 slider-wrapper">
-                <input type="range" id="arm-adjusted-rate-slider" min="1" max="15" step="0.1" value="7.5" class="slider">
-              </div>
-            </div>
-
-            <!-- ARM Phase Summary Badge -->
-            <div class="arm-phase-badge" id="arm-phase-badge">
-              <div class="arm-phase-item">
-                <span class="phase-title"><i class="fa-solid fa-lock"></i> Fixed Phase (Yrs 1–<span id="arm-badge-fixed-years">5</span>)</span>
-                <span class="phase-rate" id="arm-badge-fixed-rate">6.50%</span>
-                <span class="phase-payment" id="arm-badge-fixed-payment">$0.00/mo</span>
-              </div>
-              <div class="arm-phase-arrow"><i class="fa-solid fa-arrow-right"></i></div>
-              <div class="arm-phase-item warning">
-                <span class="phase-title"><i class="fa-solid fa-chart-line"></i> Reset Phase (Yrs <span id="arm-badge-reset-start">6</span>–<span id="arm-badge-reset-end">30</span>) <i class="fa-solid fa-circle-info info-icon" data-term="arm-reset-payment" title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
-                <span class="phase-rate" id="arm-badge-adjusted-rate">7.50%</span>
-                <span class="phase-payment" id="arm-badge-adjusted-payment">$0.00/mo</span>
-              </div>
-            </div>
           </div>
 
-          <!-- Taxes & Insurance -->
-          <div class="input-group-row">
-            <div class="input-group width-50">
-              <label for="property-tax">Property Tax Rate <i class="fa-solid fa-circle-info info-icon" data-term="property-tax" title="Click for plain-English explanation" role="button" tabindex="0"></i></label>
-              <div class="input-wrapper suffix">
-                <input type="number" id="property-tax" value="0.9" min="0" max="10" step="0.05">
-                <span class="input-addon">%</span>
+          <!-- Accordion 2: ARM Settings Panel (Shown conditionally) -->
+          <div class="accordion-group open" id="accordion-arm-group" style="display: none;">
+            <button type="button" class="accordion-header" aria-expanded="true" aria-controls="accordion-arm-body">
+              <div class="accordion-header-top">
+                <div class="accordion-title">
+                  <i class="fa-solid fa-clock-rotate-left"></i>
+                  <h2>ARM Settings</h2>
+                </div>
+                <i class="fa-solid fa-chevron-down accordion-icon"></i>
               </div>
-            </div>
-            <div class="input-group width-50">
-              <label for="home-insurance">Home Insurance Rate <i class="fa-solid fa-circle-info info-icon" data-term="home-insurance" title="Click for plain-English explanation" role="button" tabindex="0"></i></label>
-              <div class="input-wrapper suffix">
-                <input type="number" id="home-insurance" value="0.5" min="0" max="5" step="0.05">
-                <span class="input-addon">%</span>
+              <div class="accordion-summary-row">
+                <span class="accordion-summary-badge" id="badge-summary-arm">Fixed 5Y @ 6.5% → Reset 7.5%</span>
               </div>
-            </div>
-          </div>
-          <div class="input-group-row">
-            <div class="width-50 slider-wrapper">
-              <input type="range" id="property-tax-slider" min="0" max="5" step="0.05" value="0.9" class="slider">
-            </div>
-            <div class="width-50 slider-wrapper">
-              <input type="range" id="home-insurance-slider" min="0" max="3" step="0.05" value="0.5" class="slider">
-            </div>
-          </div>
+            </button>
+            <div class="accordion-body" id="accordion-arm-body">
+              <div id="arm-settings-panel" class="arm-settings-panel">
+                <div class="arm-header">
+                  <i class="fa-solid fa-clock-rotate-left"></i>
+                  <span>ARM Adjustment Parameters <i class="fa-solid fa-circle-info info-icon" data-term="arm-loan"
+                      title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
+                </div>
+                <div class="input-group-row">
+                  <div class="input-group width-50">
+                    <label for="arm-fixed-term">Initial Fixed Period <i class="fa-solid fa-circle-info info-icon"
+                        data-term="arm-fixed-term" title="Click for plain-English explanation" role="button"
+                        tabindex="0"></i></label>
+                    <div class="input-wrapper suffix">
+                      <input type="number" id="arm-fixed-term" value="5" min="1" max="10" step="1">
+                      <span class="input-addon">Yrs</span>
+                    </div>
+                  </div>
+                  <div class="input-group width-50">
+                    <label for="arm-adjusted-rate">Expected Reset Rate <i class="fa-solid fa-circle-info info-icon"
+                        data-term="arm-adjusted-rate" title="Click for plain-English explanation" role="button"
+                        tabindex="0"></i></label>
+                    <div class="input-wrapper suffix">
+                      <input type="number" id="arm-adjusted-rate" value="7.5" min="0.1" max="25" step="0.01">
+                      <span class="input-addon">%</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="input-group-row">
+                  <div class="width-50 slider-wrapper">
+                    <input type="range" id="arm-fixed-term-slider" min="1" max="10" step="1" value="5" class="slider">
+                  </div>
+                  <div class="width-50 slider-wrapper">
+                    <input type="range" id="arm-adjusted-rate-slider" min="1" max="15" step="0.1" value="7.5"
+                      class="slider">
+                  </div>
+                </div>
 
-          <div class="divider"></div>
-
-          <div class="panel-header sub-section">
-            <i class="fa-solid fa-wallet"></i>
-            <h2>Monthly Budget</h2>
-          </div>
-
-          <!-- Monthly Take Home Salary & Monthly Expenses -->
-          <div class="input-group-row">
-            <div class="input-group width-50">
-              <label for="take-home-salary">Take-Home Salary <i class="fa-solid fa-circle-info info-icon" data-term="take-home-salary" title="Click for plain-English explanation" role="button" tabindex="0"></i></label>
-              <div class="input-wrapper prefix">
-                <span class="input-addon">$</span>
-                <input type="number" id="take-home-salary" value="8000" min="0" max="100000" step="100">
+                <!-- ARM Phase Summary Badge -->
+                <div class="arm-phase-badge" id="arm-phase-badge">
+                  <div class="arm-phase-item">
+                    <span class="phase-title"><i class="fa-solid fa-lock"></i> Fixed Phase (Yrs 1–<span
+                        id="arm-badge-fixed-years">5</span>)</span>
+                    <span class="phase-rate" id="arm-badge-fixed-rate">6.50%</span>
+                    <span class="phase-payment" id="arm-badge-fixed-payment">$0.00/mo</span>
+                  </div>
+                  <div class="arm-phase-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                  <div class="arm-phase-item warning">
+                    <span class="phase-title"><i class="fa-solid fa-chart-line"></i> Reset Phase (Yrs <span
+                        id="arm-badge-reset-start">6</span>–<span id="arm-badge-reset-end">30</span>) <i
+                        class="fa-solid fa-circle-info info-icon" data-term="arm-reset-payment"
+                        title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
+                    <span class="phase-rate" id="arm-badge-adjusted-rate">7.50%</span>
+                    <span class="phase-payment" id="arm-badge-adjusted-payment">$0.00/mo</span>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div class="input-group width-50">
-              <label for="monthly-expenses">Monthly Expenses <i class="fa-solid fa-circle-info info-icon" data-term="monthly-expenses" title="Click for plain-English explanation" role="button" tabindex="0"></i></label>
-              <div class="input-wrapper prefix">
-                <span class="input-addon">$</span>
-                <input type="number" id="monthly-expenses" value="3000" min="0" max="100000" step="100">
-              </div>
-            </div>
-          </div>
-          <div class="input-group-row">
-            <div class="width-50 slider-wrapper">
-              <input type="range" id="take-home-slider" min="0" max="25000" step="250" value="8000" class="slider">
-            </div>
-            <div class="width-50 slider-wrapper">
-              <input type="range" id="expenses-slider" min="0" max="20000" step="200" value="3000" class="slider">
             </div>
           </div>
 
-          <div class="divider"></div>
-          
-          <div class="panel-header sub-section">
-            <i class="fa-solid fa-rocket"></i>
-            <h2>Accelerate Payoff</h2>
-          </div>
-
-          <!-- Extra Monthly Payment -->
-          <div class="input-group">
-            <label for="extra-monthly">Extra Monthly Payment <i class="fa-solid fa-circle-info info-icon" data-term="extra-monthly" title="Click for plain-English explanation" role="button" tabindex="0"></i></label>
-            <div class="input-wrapper prefix">
-              <span class="input-addon">$</span>
-              <input type="number" id="extra-monthly" value="200" min="0" max="5000" step="10">
-            </div>
-            <input type="range" id="extra-monthly-slider" min="0" max="2000" step="50" value="200" class="slider">
-          </div>
-
-          <!-- One-Time Extra Payment -->
-          <div class="input-group-row">
-            <div class="input-group width-60">
-              <label for="one-time-extra">One-Time Extra Payment <i class="fa-solid fa-circle-info info-icon" data-term="one-time-extra" title="Click for plain-English explanation" role="button" tabindex="0"></i></label>
-              <div class="input-wrapper prefix">
-                <span class="input-addon">$</span>
-                <input type="number" id="one-time-extra" value="5000" min="0" max="500000" step="100">
+          <!-- Accordion 3: Monthly Budget -->
+          <div class="accordion-group open" id="accordion-budget-group">
+            <button type="button" class="accordion-header" aria-expanded="true" aria-controls="accordion-budget-body">
+              <div class="accordion-header-top">
+                <div class="accordion-title">
+                  <i class="fa-solid fa-wallet"></i>
+                  <h2>Monthly Budget</h2>
+                </div>
+                <i class="fa-solid fa-chevron-down accordion-icon"></i>
+              </div>
+              <div class="accordion-summary-row">
+                <span class="accordion-summary-badge" id="badge-summary-budget">$8,000 Income | $3,000 Exp</span>
+              </div>
+            </button>
+            <div class="accordion-body" id="accordion-budget-body">
+              <!-- Monthly Take Home Salary & Monthly Expenses -->
+              <div class="input-group-row">
+                <div class="input-group width-50">
+                  <label for="take-home-salary">Take-Home Salary <i class="fa-solid fa-circle-info info-icon"
+                      data-term="take-home-salary" title="Click for plain-English explanation" role="button"
+                      tabindex="0"></i></label>
+                  <div class="input-wrapper prefix">
+                    <span class="input-addon">$</span>
+                    <input type="number" id="take-home-salary" value="8000" min="0" max="100000" step="100">
+                  </div>
+                </div>
+                <div class="input-group width-50">
+                  <label for="monthly-expenses">Monthly Expenses <i class="fa-solid fa-circle-info info-icon"
+                      data-term="monthly-expenses" title="Click for plain-English explanation" role="button"
+                      tabindex="0"></i></label>
+                  <div class="input-wrapper prefix">
+                    <span class="input-addon">$</span>
+                    <input type="number" id="monthly-expenses" value="3000" min="0" max="100000" step="100">
+                  </div>
+                </div>
+              </div>
+              <div class="input-group-row">
+                <div class="width-50 slider-wrapper">
+                  <input type="range" id="take-home-slider" min="0" max="25000" step="250" value="8000" class="slider">
+                </div>
+                <div class="width-50 slider-wrapper">
+                  <input type="range" id="expenses-slider" min="0" max="20000" step="200" value="3000" class="slider">
+                </div>
               </div>
             </div>
-            <div class="input-group width-40">
-              <label for="one-time-month">At Month</label>
-              <div class="input-wrapper">
-                <input type="number" id="one-time-month" value="12" min="1" max="600" step="1">
+          </div>
+
+          <!-- Accordion 4: Accelerate Payoff -->
+          <div class="accordion-group open" id="accordion-payoff-group">
+            <button type="button" class="accordion-header" aria-expanded="true" aria-controls="accordion-payoff-body">
+              <div class="accordion-header-top">
+                <div class="accordion-title">
+                  <i class="fa-solid fa-rocket"></i>
+                  <h2>Accelerate Payoff</h2>
+                </div>
+                <i class="fa-solid fa-chevron-down accordion-icon"></i>
+              </div>
+              <div class="accordion-summary-row">
+                <span class="accordion-summary-badge" id="badge-summary-payoff">+$200/mo Extra</span>
+              </div>
+            </button>
+            <div class="accordion-body" id="accordion-payoff-body">
+              <!-- Extra Monthly Payment -->
+              <div class="input-group">
+                <label for="extra-monthly">Extra Monthly Payment <i class="fa-solid fa-circle-info info-icon"
+                    data-term="extra-monthly" title="Click for plain-English explanation" role="button"
+                    tabindex="0"></i></label>
+                <div class="input-wrapper prefix">
+                  <span class="input-addon">$</span>
+                  <input type="number" id="extra-monthly" value="200" min="0" max="5000" step="10">
+                </div>
+                <input type="range" id="extra-monthly-slider" min="0" max="2000" step="50" value="200" class="slider">
+              </div>
+
+              <!-- One-Time Extra Payment -->
+              <div class="input-group-row">
+                <div class="input-group width-60">
+                  <label for="one-time-extra">One-Time Extra Payment <i class="fa-solid fa-circle-info info-icon"
+                      data-term="one-time-extra" title="Click for plain-English explanation" role="button"
+                      tabindex="0"></i></label>
+                  <div class="input-wrapper prefix">
+                    <span class="input-addon">$</span>
+                    <input type="number" id="one-time-extra" value="5000" min="0" max="500000" step="100">
+                  </div>
+                </div>
+                <div class="input-group width-40">
+                  <label for="one-time-month">At Month</label>
+                  <div class="input-wrapper">
+                    <input type="number" id="one-time-month" value="12" min="1" max="600" step="1">
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+
         </form>
       </section>
 
       <!-- Right Panel: Outputs / Dashboard -->
       <div class="dashboard-outputs">
-        
+
         <!-- KPI Cards Grid -->
         <section class="kpi-grid">
           <!-- Card 1: Monthly Payment with Interactive Donut Chart Toggle -->
           <div class="kpi-card highlight" id="kpi-piti-card">
             <div class="kpi-header">
-              <span>Standard Monthly PITI <i class="fa-solid fa-circle-info info-icon" data-term="piti" title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
+              <span>Standard Monthly PITI <i class="fa-solid fa-circle-info info-icon" data-term="piti"
+                  title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
               <div class="kpi-view-toggle" id="piti-view-toggle">
-                <button type="button" class="btn-toggle-view active" id="btn-piti-view-text" title="Text Metrics View" aria-label="Text Metrics View">
+                <button type="button" class="btn-toggle-view active" id="btn-piti-view-text" title="Text Metrics View"
+                  aria-label="Text Metrics View">
                   <i class="fa-solid fa-list"></i>
                 </button>
-                <button type="button" class="btn-toggle-view" id="btn-piti-view-chart" title="Donut Chart View" aria-label="Donut Chart View">
+                <button type="button" class="btn-toggle-view" id="btn-piti-view-chart" title="Donut Chart View"
+                  aria-label="Donut Chart View">
                   <i class="fa-solid fa-chart-pie"></i>
                 </button>
               </div>
@@ -351,7 +450,7 @@
                 <div class="kpi-value" id="kpi-standard-payment">$0.00</div>
                 <span class="piti-hero-sublabel">Base Standard Payment</span>
               </div>
-              
+
               <div class="piti-summary-badges">
                 <div class="piti-badge-row extra-row">
                   <span class="badge-label">With Extra:</span>
@@ -389,7 +488,8 @@
                 <div class="piti-component-chip pmi-chip" id="breakdown-pmi-wrapper" style="display: none;">
                   <div class="chip-meta">
                     <span class="component-dot pmi"></span>
-                    <span class="component-name">PMI <i class="fa-solid fa-circle-info info-icon" data-term="pmi" title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
+                    <span class="component-name">PMI <i class="fa-solid fa-circle-info info-icon" data-term="pmi"
+                        title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
                   </div>
                   <strong id="breakdown-pmi">$0.00</strong>
                 </div>
@@ -416,15 +516,16 @@
           <!-- Card 2: Net Monthly Cash Flow & Circular DTI Gauge -->
           <div class="kpi-card highlight" id="kpi-cash-flow-card">
             <div class="kpi-header">
-              <span>Net Cash Flow &amp; DTI <i class="fa-solid fa-circle-info info-icon" data-term="net-cash-flow" title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
+              <span>Net Cash Flow &amp; DTI <i class="fa-solid fa-circle-info info-icon" data-term="net-cash-flow"
+                  title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
               <i class="fa-solid fa-scale-balanced" id="kpi-cash-flow-icon"></i>
             </div>
-            
+
             <div class="kpi-dti-container">
               <div class="cash-flow-hero-column">
                 <div class="kpi-value" id="kpi-net-cash-flow">$0.00</div>
                 <span class="cash-flow-hero-sublabel">Net Discretionary Cash Flow</span>
-                
+
                 <div id="dti-status-pill" class="dti-status-pill ideal">
                   <i class="fa-solid fa-shield-halved" id="dti-status-icon"></i>
                   <span id="dti-status-text">Ideal (&lt;28%)</span>
@@ -469,7 +570,8 @@
           <!-- Card 3: Total Interest Paid -->
           <div class="kpi-card warning">
             <div class="kpi-header">
-              <span>Total Interest Paid <i class="fa-solid fa-circle-info info-icon" data-term="interest-paid" title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
+              <span>Total Interest Paid <i class="fa-solid fa-circle-info info-icon" data-term="interest-paid"
+                  title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
               <i class="fa-solid fa-percent"></i>
             </div>
             <div class="kpi-value" id="kpi-interest-paid">$0.00</div>
@@ -482,21 +584,24 @@
           <!-- Card 4: Total Interest Saved with Interactive Savings Breakdown Chips -->
           <div class="kpi-card success" id="kpi-interest-saved-card">
             <div class="kpi-header">
-              <span>Total Interest Saved <i class="fa-solid fa-circle-info info-icon" data-term="interest-saved" title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
+              <span>Total Interest Saved <i class="fa-solid fa-circle-info info-icon" data-term="interest-saved"
+                  title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
               <i class="fa-solid fa-piggy-bank"></i>
             </div>
             <div class="kpi-value" id="kpi-interest-saved">$0.00</div>
-            
+
             <!-- Micro-Pill Savings Breakdown Chips -->
             <div class="savings-chips-container" id="savings-chips-container">
-              <div class="savings-chip monthly active" id="chip-savings-monthly" title="Click to edit Extra Monthly Payment" role="button" tabindex="0">
+              <div class="savings-chip monthly active" id="chip-savings-monthly"
+                title="Click to edit Extra Monthly Payment" role="button" tabindex="0">
                 <div class="savings-chip-header">
                   <i class="fa-solid fa-calendar-check"></i>
                   <span>Monthly Extra</span>
                 </div>
                 <div class="savings-chip-value" id="savings-monthly-val">$0.00</div>
               </div>
-              <div class="savings-chip lump-sum dimmed" id="chip-savings-lump" title="Click to edit One-Time Lump Sum Payment" role="button" tabindex="0">
+              <div class="savings-chip lump-sum dimmed" id="chip-savings-lump"
+                title="Click to edit One-Time Lump Sum Payment" role="button" tabindex="0">
                 <div class="savings-chip-header">
                   <i class="fa-solid fa-bolt"></i>
                   <span>Lump Sum</span>
@@ -514,7 +619,8 @@
           <!-- Card 5: Time Saved -->
           <div class="kpi-card primary">
             <div class="kpi-header">
-              <span>Time Saved <i class="fa-solid fa-circle-info info-icon" data-term="time-saved" title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
+              <span>Time Saved <i class="fa-solid fa-circle-info info-icon" data-term="time-saved"
+                  title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
               <i class="fa-solid fa-hourglass-half"></i>
             </div>
             <div class="kpi-value" id="kpi-time-saved">0 Months</div>
@@ -552,14 +658,18 @@
         <section class="panel target-calc-panel">
           <div class="panel-header">
             <i class="fa-solid fa-calculator"></i>
-            <h2>Target Term Calculator <i class="fa-solid fa-circle-info info-icon" data-term="target-term" title="Click for plain-English explanation" role="button" tabindex="0"></i></h2>
+            <h2>Target Term Calculator <i class="fa-solid fa-circle-info info-icon" data-term="target-term"
+                title="Click for plain-English explanation" role="button" tabindex="0"></i></h2>
           </div>
-          <p class="section-description">Calculate how much extra monthly payment you need to make to fully pay off the remaining principal in a specific target term length.</p>
-          
+          <p class="section-description">Calculate how much extra monthly payment you need to make to fully pay off the
+            remaining principal in a specific target term length.</p>
+
           <div class="target-calc-grid">
             <div class="target-inputs">
               <div class="input-group">
-                <label for="target-term">Target Payoff Term <i class="fa-solid fa-circle-info info-icon" data-term="target-term" title="Click for plain-English explanation" role="button" tabindex="0"></i></label>
+                <label for="target-term">Target Payoff Term <i class="fa-solid fa-circle-info info-icon"
+                    data-term="target-term" title="Click for plain-English explanation" role="button"
+                    tabindex="0"></i></label>
                 <div class="input-wrapper suffix">
                   <input type="number" id="target-term" value="15" min="1" max="40" step="1">
                   <span class="input-addon">Years</span>
@@ -642,16 +752,19 @@
           </div>
 
           <div class="table-pagination" id="table-pagination">
-            <button class="btn btn-xs btn-outline" id="btn-prev-page" disabled><i class="fa-solid fa-chevron-left"></i> Prev</button>
+            <button class="btn btn-xs btn-outline" id="btn-prev-page" disabled><i class="fa-solid fa-chevron-left"></i>
+              Prev</button>
             <span class="pagination-info" id="pagination-info">Page 1 of 1</span>
-            <button class="btn btn-xs btn-outline" id="btn-next-page" disabled>Next <i class="fa-solid fa-chevron-right"></i></button>
+            <button class="btn btn-xs btn-outline" id="btn-next-page" disabled>Next <i
+                class="fa-solid fa-chevron-right"></i></button>
           </div>
       </div>
     </main>
 
     <!-- Footer -->
     <footer class="app-footer-bar">
-      <p>&copy; 2026 Mortgage-Abilty.com. Built with precision for financial empowerment. | <button type="button" id="btn-open-disclaimer" class="footer-disclaimer-btn">Terms &amp; Privacy Disclaimer</button></p>
+      <p>&copy; 2026 Mortgage-Abilty.com. Built with precision for financial empowerment. | <button type="button"
+          id="btn-open-disclaimer" class="footer-disclaimer-btn">Terms &amp; Privacy Disclaimer</button></p>
     </footer>
   </div>
 
@@ -669,7 +782,8 @@
         </div>
         <div class="input-group input-group-spaced">
           <label for="scenario-comments-input">Scenario Comments &amp; Notes</label>
-          <textarea id="scenario-comments-input" rows="3" placeholder="e.g. 5/1 ARM assuming 7.5% reset rate. Plan to pay extra $500 monthly to pay off early."></textarea>
+          <textarea id="scenario-comments-input" rows="3"
+            placeholder="e.g. 5/1 ARM assuming 7.5% reset rate. Plan to pay extra $500 monthly to pay off early."></textarea>
         </div>
       </div>
       <div class="modal-footer">
@@ -684,38 +798,53 @@
     <div class="modal-card modal-card-lg">
       <div class="modal-header">
         <h3><i class="fa-solid fa-scale-balanced"></i> Terms of Use &amp; Privacy Disclaimer</h3>
-        <button type="button" id="btn-x-close-disclaimer" class="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" id="btn-x-close-disclaimer" class="btn-close-modal"><i
+            class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="modal-body disclaimer-modal-body">
-        
+
         <div class="disclaimer-section">
           <h4><i class="fa-solid fa-user-shield"></i> 1. Privacy &amp; Data Storage Policy (100% Local-First)</h4>
           <p>Mortgage-Abilty.com respects your financial privacy. <strong>No personal data, financial parameters, budgets, scenario names, or notes are transmitted to, collected by, or shared with the site's creators or any third parties.</strong></p>
           <ul class="disclaimer-list">
-            <li><strong>Browser Storage Only:</strong> All inputs and saved financial scenarios reside strictly in your browser's local storage (<code>localStorage</code>).</li>
-            <li><strong>No Tracking &amp; Analytics:</strong> We do not run tracking cookies, telemetry scripts, or remote server logging.</li>
-            <li><strong>Data Ownership:</strong> You retain complete control over your data. Clearing your browser cache or clicking "Delete" removes scenario data permanently from your local device.</li>
+            <li><strong>Browser Storage Only:</strong> All inputs and saved financial scenarios reside strictly in your
+              browser's local storage (<code>localStorage</code>).</li>
+            <li><strong>No Tracking &amp; Analytics:</strong> We do not run tracking cookies, telemetry scripts, or
+              remote server logging.</li>
+            <li><strong>Data Ownership:</strong> You retain complete control over your data. Clearing your browser cache
+              or clicking "Delete" removes scenario data permanently from your local device.</li>
           </ul>
         </div>
 
         <div class="disclaimer-section">
           <h4><i class="fa-solid fa-calculator"></i> 2. Financial &amp; Calculation Disclaimer</h4>
-          <p>Mortgage-Abilty.com is provided solely for educational, informational, and personal visualization purposes. All amortization schedules, payment breakdowns, rate adjustment projections (ARMs), and interest savings calculations are mathematical approximations based on simplified financial models.</p>
+          <p>Mortgage-Abilty.com is provided solely for educational, informational, and personal visualization purposes.
+            All amortization schedules, payment breakdowns, rate adjustment projections (ARMs), and interest savings
+            calculations are mathematical approximations based on simplified financial models.</p>
           <ul class="disclaimer-list">
-            <li><strong>Not Financial Advice:</strong> Calculations do not constitute formal mortgage quotes, financial advice, legal counsel, or tax guidance.</li>
-            <li><strong>Lender Variance:</strong> Actual mortgage lender terms may differ due to daily interest compounding, escrow adjustments, PMI thresholds, regional property tax variations, and lender-specific fee structures.</li>
-            <li><strong>User Responsibility:</strong> Always consult a licensed mortgage broker, certified financial planner (CFP), or tax professional before entering into binding real estate transactions or financial agreements.</li>
+            <li><strong>Not Financial Advice:</strong> Calculations do not constitute formal mortgage quotes, financial
+              advice, legal counsel, or tax guidance.</li>
+            <li><strong>Lender Variance:</strong> Actual mortgage lender terms may differ due to daily interest
+              compounding, escrow adjustments, PMI thresholds, regional property tax variations, and lender-specific fee
+              structures.</li>
+            <li><strong>User Responsibility:</strong> Always consult a licensed mortgage broker, certified financial
+              planner (CFP), or tax professional before entering into binding real estate transactions or financial
+              agreements.</li>
           </ul>
         </div>
 
         <div class="disclaimer-section">
           <h4><i class="fa-solid fa-cloud"></i> 3. Third-Party CDNs</h4>
-          <p>This static website fetches standard public open-source libraries (Google Fonts, FontAwesome, Chart.js) via public HTTPS Content Delivery Networks (CDNs) for rendering typography, icons, and graphs. These CDNs do not receive or process your private financial inputs.</p>
+          <p>This static website fetches standard public open-source libraries (Google Fonts, FontAwesome, Chart.js) via
+            public HTTPS Content Delivery Networks (CDNs) for rendering typography, icons, and graphs. These CDNs do not
+            receive or process your private financial inputs.</p>
         </div>
 
         <div class="disclaimer-section">
           <h4><i class="fa-solid fa-gavel"></i> 4. Limitation of Liability</h4>
-          <p>By using Mortgage-Abilty.com, you agree that the creators and maintainers of this website assume no liability or responsibility for any financial decisions, losses, errors, or omissions resulting from reliance on the tools or calculations provided.</p>
+          <p>By using Mortgage-Abilty.com, you agree that the creators and maintainers of this website assume no
+            liability or responsibility for any financial decisions, losses, errors, or omissions resulting from
+            reliance on the tools or calculations provided.</p>
         </div>
 
       </div>
@@ -736,7 +865,8 @@
         <div class="glossary-controls mb-3">
           <div class="search-wrapper">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="modal-help-search" placeholder="Type to filter terms (e.g. PMI, ARM, PITI, Closing Costs)...">
+            <input type="text" id="modal-help-search"
+              placeholder="Type to filter terms (e.g. PMI, ARM, PITI, Closing Costs)...">
           </div>
           <div class="glossary-category-pills" id="modal-glossary-category-pills">
             <button type="button" class="category-pill active" data-category="all">All Terms</button>
@@ -757,7 +887,29 @@
     </div>
   </div>
 
+  <!-- Mobile Floating Summary Bar -->
+  <div class="mobile-summary-bar" id="mobile-summary-bar">
+    <div class="mobile-summary-content">
+      <div class="mobile-summary-metric">
+        <span class="mobile-metric-label">PITI</span>
+        <strong class="mobile-metric-val" id="mobile-kpi-piti">$0/mo</strong>
+      </div>
+      <div class="mobile-summary-metric">
+        <span class="mobile-metric-label">Payoff</span>
+        <strong class="mobile-metric-val" id="mobile-kpi-term">0 Mos</strong>
+      </div>
+      <div class="mobile-summary-metric">
+        <span class="mobile-metric-label">Net Cash Flow</span>
+        <strong class="mobile-metric-val" id="mobile-kpi-cashflow">$0/mo</strong>
+      </div>
+    </div>
+    <button type="button" class="btn btn-xs btn-primary mobile-jump-btn" id="btn-mobile-jump-chart">
+      <i class="fa-solid fa-chart-line"></i> Chart
+    </button>
+  </div>
+
   <!-- Application Logic -->
   <script type="module" src="/app.js"></script>
 </body>
+
 </html>
