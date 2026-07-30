@@ -347,21 +347,51 @@
 
             <!-- View 1: Text View -->
             <div class="piti-view-container" id="piti-view-text">
-              <div class="kpi-value" id="kpi-standard-payment">$0.00</div>
-              <div class="kpi-footer" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                <div style="display: flex; justify-content: space-between; width: 100%;">
-                  <span>With Extra:</span>
+              <div class="piti-hero-block">
+                <div class="kpi-value" id="kpi-standard-payment">$0.00</div>
+                <span class="piti-hero-sublabel">Base Standard Payment</span>
+              </div>
+              
+              <div class="piti-summary-badges">
+                <div class="piti-badge-row extra-row">
+                  <span class="badge-label">With Extra:</span>
                   <strong id="kpi-total-payment">$0.00</strong>
                 </div>
-                <div id="arm-kpi-sub-row" style="display: none; justify-content: space-between; width: 100%; color: var(--warning); font-size: 0.78rem; border-top: 1px dashed rgba(245, 158, 11, 0.3); padding-top: 4px; margin-top: 2px;">
-                  <span>Reset PITI (Yr <span id="arm-kpi-reset-yr">6</span>+):</span>
-                  <strong id="arm-kpi-adjusted-payment" style="color: var(--warning);">$0.00</strong>
+                <div id="arm-kpi-sub-row" class="piti-badge-row arm-row" style="display: none;">
+                  <span class="badge-label">Reset PITI (Yr <span id="arm-kpi-reset-yr">6</span>+):</span>
+                  <strong id="arm-kpi-adjusted-payment">$0.00</strong>
                 </div>
-                <div style="display: flex; justify-content: space-between; width: 100%; font-size: 0.75rem; color: var(--text-muted); border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 4px; margin-top: 2px;" id="piti-text-breakdown-row">
-                  <span>P&amp;I: <span id="breakdown-pi">$0.00</span></span>
-                  <span>Tax: <span id="breakdown-tax">$0.00</span></span>
-                  <span>Ins: <span id="breakdown-ins">$0.00</span></span>
-                  <span id="breakdown-pmi-wrapper" style="display: none; color: var(--danger);">PMI: <span id="breakdown-pmi">$0.00</span> <i class="fa-solid fa-circle-info info-icon" data-term="pmi" title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
+              </div>
+
+              <!-- Component Breakdown Chips Grid -->
+              <div class="piti-breakdown-grid" id="piti-text-breakdown-row">
+                <div class="piti-component-chip pi-chip">
+                  <div class="chip-meta">
+                    <span class="component-dot pi"></span>
+                    <span class="component-name">P&amp;I</span>
+                  </div>
+                  <strong id="breakdown-pi">$0.00</strong>
+                </div>
+                <div class="piti-component-chip tax-chip">
+                  <div class="chip-meta">
+                    <span class="component-dot tax"></span>
+                    <span class="component-name">Tax</span>
+                  </div>
+                  <strong id="breakdown-tax">$0.00</strong>
+                </div>
+                <div class="piti-component-chip ins-chip">
+                  <div class="chip-meta">
+                    <span class="component-dot ins"></span>
+                    <span class="component-name">Ins</span>
+                  </div>
+                  <strong id="breakdown-ins">$0.00</strong>
+                </div>
+                <div class="piti-component-chip pmi-chip" id="breakdown-pmi-wrapper" style="display: none;">
+                  <div class="chip-meta">
+                    <span class="component-dot pmi"></span>
+                    <span class="component-name">PMI <i class="fa-solid fa-circle-info info-icon" data-term="pmi" title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
+                  </div>
+                  <strong id="breakdown-pmi">$0.00</strong>
                 </div>
               </div>
             </div>
@@ -383,7 +413,60 @@
             </div>
           </div>
 
-          <!-- Card 2: Total Interest Paid -->
+          <!-- Card 2: Net Monthly Cash Flow & Circular DTI Gauge -->
+          <div class="kpi-card highlight" id="kpi-cash-flow-card">
+            <div class="kpi-header">
+              <span>Net Cash Flow &amp; DTI <i class="fa-solid fa-circle-info info-icon" data-term="net-cash-flow" title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
+              <i class="fa-solid fa-scale-balanced" id="kpi-cash-flow-icon"></i>
+            </div>
+            
+            <div class="kpi-dti-container">
+              <div class="cash-flow-hero-column">
+                <div class="kpi-value" id="kpi-net-cash-flow">$0.00</div>
+                <span class="cash-flow-hero-sublabel">Net Discretionary Cash Flow</span>
+                
+                <div id="dti-status-pill" class="dti-status-pill ideal">
+                  <i class="fa-solid fa-shield-halved" id="dti-status-icon"></i>
+                  <span id="dti-status-text">Ideal (&lt;28%)</span>
+                </div>
+              </div>
+
+              <div class="dti-gauge-wrapper">
+                <svg class="dti-gauge-svg" viewBox="0 0 100 100" aria-hidden="true">
+                  <circle class="dti-gauge-bg" cx="50" cy="50" r="38"></circle>
+                  <circle class="dti-gauge-fill" id="dti-gauge-fill" cx="50" cy="50" r="38"></circle>
+                </svg>
+                <div class="dti-gauge-center">
+                  <span class="dti-gauge-value" id="kpi-dti-ratio">0.0%</span>
+                  <span class="dti-gauge-sublabel">DTI Ratio</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Micro Table Breakdown -->
+            <div class="cash-flow-table-container">
+              <table class="cash-flow-micro-table">
+                <thead>
+                  <tr>
+                    <th>Income</th>
+                    <th>Spending</th>
+                    <th>PITI</th>
+                    <th>Net Cash Flow</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td id="cf-table-income">$0.00</td>
+                    <td id="kpi-discretionary-sub">$0.00</td>
+                    <td id="cf-table-piti">$0.00</td>
+                    <td id="cf-table-net" class="highlight-net">$0.00</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Card 3: Total Interest Paid -->
           <div class="kpi-card warning">
             <div class="kpi-header">
               <span>Total Interest Paid <i class="fa-solid fa-circle-info info-icon" data-term="interest-paid" title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
@@ -396,7 +479,7 @@
             </div>
           </div>
 
-          <!-- Card 3: Total Interest Saved with Interactive Savings Breakdown Chips -->
+          <!-- Card 4: Total Interest Saved with Interactive Savings Breakdown Chips -->
           <div class="kpi-card success" id="kpi-interest-saved-card">
             <div class="kpi-header">
               <span>Total Interest Saved <i class="fa-solid fa-circle-info info-icon" data-term="interest-saved" title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
@@ -428,7 +511,7 @@
             </div>
           </div>
 
-          <!-- Card 3: Time Saved -->
+          <!-- Card 5: Time Saved -->
           <div class="kpi-card primary">
             <div class="kpi-header">
               <span>Time Saved <i class="fa-solid fa-circle-info info-icon" data-term="time-saved" title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
@@ -438,43 +521,6 @@
             <div class="kpi-footer">
               <span>New Payoff: </span>
               <strong id="kpi-payoff-term">0 Yrs</strong>
-            </div>
-          </div>
-
-          <!-- Card 4: Net Monthly Cash Flow & Circular DTI Gauge -->
-          <div class="kpi-card highlight" id="kpi-cash-flow-card">
-            <div class="kpi-header">
-              <span>Net Cash Flow &amp; DTI <i class="fa-solid fa-circle-info info-icon" data-term="net-cash-flow" title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
-              <i class="fa-solid fa-scale-balanced" id="kpi-cash-flow-icon"></i>
-            </div>
-            
-            <div class="kpi-dti-container">
-              <div class="dti-gauge-wrapper">
-                <svg class="dti-gauge-svg" viewBox="0 0 100 100" aria-hidden="true">
-                  <circle class="dti-gauge-bg" cx="50" cy="50" r="38"></circle>
-                  <circle class="dti-gauge-fill" id="dti-gauge-fill" cx="50" cy="50" r="38"></circle>
-                </svg>
-                <div class="dti-gauge-center">
-                  <span class="dti-gauge-value" id="kpi-dti-ratio">0.0%</span>
-                  <span class="dti-gauge-sublabel">DTI Ratio</span>
-                </div>
-              </div>
-              
-              <div class="dti-info-column">
-                <div class="cash-flow-row">
-                  <span class="cash-flow-label">Net Cash Flow</span>
-                  <span class="cash-flow-value" id="kpi-net-cash-flow">$0.00</span>
-                </div>
-                <div id="dti-status-pill" class="dti-status-pill ideal">
-                  <i class="fa-solid fa-shield-halved" id="dti-status-icon"></i>
-                  <span id="dti-status-text">Ideal (&lt;28%)</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="kpi-footer">
-              <span>Discretionary Income:</span>
-              <strong id="kpi-discretionary-sub">$0.00</strong>
             </div>
           </div>
         </section>

@@ -566,8 +566,16 @@ function updateUI() {
   const netCashFlow = takeHome - expenses - totalMonthlyPITIWithExtra;
   
   if (elKpiNetCashFlow) elKpiNetCashFlow.textContent = formatCurrency(netCashFlow);
-  if (elKpiDiscretionarySub) elKpiDiscretionarySub.textContent = formatCurrency(netCashFlow);
+  if (elKpiDiscretionarySub) elKpiDiscretionarySub.textContent = formatCurrency(expenses);
   
+  const elCfTableIncome = document.getElementById('cf-table-income');
+  const elCfTablePiti = document.getElementById('cf-table-piti');
+  const elCfTableNet = document.getElementById('cf-table-net');
+
+  if (elCfTableIncome) elCfTableIncome.textContent = formatCurrency(takeHome);
+  if (elCfTablePiti) elCfTablePiti.textContent = formatCurrency(totalMonthlyPITIWithExtra);
+  if (elCfTableNet) elCfTableNet.textContent = formatCurrency(netCashFlow);
+
   const dti = takeHome > 0 ? ((totalMonthlyPITIWithExtra + expenses) / takeHome) * 100 : 0;
   if (elKpiDtiRatio) elKpiDtiRatio.textContent = `${dti.toFixed(1)}%`;
 
@@ -1856,7 +1864,7 @@ function renderPitiDonutChart(pi, tax, ins, pmi = 0) {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        cutout: '72%',
+        cutout: '78%',
         plugins: {
           legend: { display: false },
           tooltip: {
@@ -1874,7 +1882,7 @@ function renderPitiDonutChart(pi, tax, ins, pmi = 0) {
     // Graceful fallback for environments without canvas 2d context
   }
 
-  // Render HTML Legend Chips & Donut Center Total
+  // Render HTML Legend Rows & Donut Center Total
   const legendGrid = document.getElementById('piti-donut-legend');
   const elDonutTotal = document.getElementById('piti-donut-total');
   const total = pi + tax + ins + pmi;
@@ -1885,12 +1893,12 @@ function renderPitiDonutChart(pi, tax, ins, pmi = 0) {
 
   if (legendGrid) {
     legendGrid.innerHTML = labels.map((label, idx) => `
-      <div class="legend-chip">
-        <div class="legend-chip-left">
-          <span class="chip-dot" style="background: ${colors[idx]};"></span>
-          <span class="chip-label">${label}</span>
+      <div class="legend-chip legend-row">
+        <div class="legend-chip-left legend-meta">
+          <span class="chip-dot legend-dot" style="background: ${colors[idx]};"></span>
+          <span class="chip-label legend-label">${label}</span>
         </div>
-        <span class="chip-val">$${Math.round(data[idx]).toLocaleString()}</span>
+        <strong class="chip-val legend-val">$${Math.round(data[idx]).toLocaleString()}</strong>
       </div>
     `).join('');
   }
