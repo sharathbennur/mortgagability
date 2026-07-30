@@ -493,3 +493,65 @@ describe('6. Theme Switcher & Persistence Tests', () => {
   });
 });
 
+describe('7. Help & Financial Glossary System Tests', () => {
+  beforeEach(() => {
+    document.body.innerHTML = fs.readFileSync(path.resolve(__dirname, './index.html'), 'utf8');
+    appModule.setupHelpHandlers();
+  });
+
+  it('should contain definitions for all financial terms including ARM adjustment parameters', () => {
+    expect(appModule.GLOSSARY_TERMS['home-price']).toBeDefined();
+    expect(appModule.GLOSSARY_TERMS['piti']).toBeDefined();
+    expect(appModule.GLOSSARY_TERMS['pmi']).toBeDefined();
+    expect(appModule.GLOSSARY_TERMS['arm-loan']).toBeDefined();
+    expect(appModule.GLOSSARY_TERMS['arm-fixed-term']).toBeDefined();
+    expect(appModule.GLOSSARY_TERMS['arm-adjusted-rate']).toBeDefined();
+    expect(appModule.GLOSSARY_TERMS['arm-reset-payment']).toBeDefined();
+  });
+
+  it('should render glossary cards for all terms in the modal glossary container', () => {
+    appModule.renderGlossaryCards('all', '');
+    const container = document.getElementById('modal-glossary-cards-container');
+    expect(container.children.length).toBeGreaterThanOrEqual(15);
+  });
+
+  it('should filter terms by category when category filter is selected', () => {
+    appModule.renderGlossaryCards('arm', '');
+    const container = document.getElementById('modal-glossary-cards-container');
+    const cards = container.querySelectorAll('.glossary-card');
+    expect(cards.length).toBe(4);
+  });
+
+  it('should filter terms dynamically when search query is typed', () => {
+    appModule.renderGlossaryCards('all', 'Target Term Payoff Calculator');
+    const container = document.getElementById('modal-glossary-cards-container');
+    const cards = container.querySelectorAll('.glossary-card');
+    expect(cards.length).toBe(1);
+    expect(cards[0].textContent).toContain('Target Term Payoff Calculator');
+  });
+
+  it('should open and close the Help & Glossary modal', () => {
+    const modal = document.getElementById('modal-help');
+    expect(modal.style.display).toBe('none');
+
+    appModule.openHelpModal();
+    expect(modal.style.display).toBe('flex');
+
+    appModule.closeHelpModal();
+    expect(modal.style.display).toBe('none');
+  });
+
+  it('should open help modal and highlight specific term when an info icon is clicked', () => {
+    const infoIcon = document.querySelector('.info-icon[data-term="pmi"]');
+    expect(infoIcon).not.toBeNull();
+
+    infoIcon.click();
+
+    const modal = document.getElementById('modal-help');
+    expect(modal.style.display).toBe('flex');
+
+    const card = modal.querySelector('[data-term-id="pmi"]');
+    expect(card.classList.contains('term-pulse')).toBe(true);
+  });
+});
+
