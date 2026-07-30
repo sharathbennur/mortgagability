@@ -931,8 +931,8 @@ input[type=number] {
 /* KPI Cards Grid */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
 }
 
 .kpi-card {
@@ -941,14 +941,50 @@ input[type=number] {
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--panel-border);
   border-radius: var(--card-radius);
-  padding: 22px;
+  padding: 18px 20px;
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  justify-content: space-between;
+  gap: 10px;
   position: relative;
   overflow: hidden;
   transition: all 0.3s ease;
+}
+
+/* Top Row Cards (PITI + Net Cash Flow & DTI) - Span 3 columns (50% width) */
+#kpi-piti-card,
+#kpi-cash-flow-card {
+  grid-column: span 3;
+}
+
+/* Bottom Row Cards (Total Interest Paid + Total Interest Saved + Time Saved) - Span 2 columns (33.3% width) */
+.kpi-grid > .kpi-card.warning,
+#kpi-interest-saved-card,
+.kpi-grid > .kpi-card.primary {
+  grid-column: span 2;
+}
+
+@media (max-width: 1024px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  #kpi-piti-card,
+  #kpi-cash-flow-card,
+  .kpi-grid > .kpi-card.warning,
+  #kpi-interest-saved-card,
+  .kpi-grid > .kpi-card.primary {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+  .kpi-card {
+    grid-column: span 1 !important;
+  }
 }
 
 .kpi-card::before {
@@ -1008,18 +1044,35 @@ input[type=number] {
   margin-top: 4px;
 }
 
-/* Circular DTI Gauge Styling */
+/* Circular DTI Gauge & Cash Flow Styling */
 .kpi-dti-container {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
-  padding: 4px 0;
+  padding: 6px 0;
+  flex-grow: 1;
+}
+
+.cash-flow-hero-column {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.cash-flow-hero-sublabel {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .dti-gauge-wrapper {
   position: relative;
-  width: 86px;
-  height: 86px;
+  width: 84px;
+  height: 84px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -1066,45 +1119,18 @@ input[type=number] {
 
 .dti-gauge-value {
   font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 800;
   color: var(--text-primary);
 }
 
 .dti-gauge-sublabel {
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   margin-top: 1px;
-}
-
-.dti-info-column {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex-grow: 1;
-  min-width: 0;
-}
-
-.cash-flow-row {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.cash-flow-label {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
-.cash-flow-value {
-  font-family: var(--font-display);
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: var(--text-primary);
 }
 
 /* DTI Status Pill */
@@ -1114,17 +1140,18 @@ input[type=number] {
   gap: 5px;
   padding: 4px 10px;
   border-radius: 20px;
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 600;
   width: fit-content;
+  margin-top: 4px;
   transition: all 0.3s ease;
   white-space: nowrap;
 }
 
 .dti-status-pill.ideal {
-  background: rgba(16, 185, 129, 0.14);
+  background: rgba(16, 185, 129, 0.12);
   color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.35);
+  border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .dti-status-pill.manageable {
@@ -1159,6 +1186,51 @@ input[type=number] {
 
 .kpi-footer strong {
   color: var(--text-primary);
+}
+
+/* Cash Flow Micro Table Breakdown */
+.cash-flow-table-container {
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="light"] .cash-flow-table-container {
+  border-top-color: rgba(15, 23, 42, 0.08);
+}
+
+.cash-flow-micro-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.72rem;
+  text-align: left;
+}
+
+.cash-flow-micro-table th {
+  font-size: 0.60rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 2px 4px 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+[data-theme="light"] .cash-flow-micro-table th {
+  border-bottom-color: rgba(15, 23, 42, 0.06);
+}
+
+.cash-flow-micro-table td {
+  padding: 4px 2px 2px 2px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  color: var(--text-primary);
+  font-size: 0.76rem;
+  white-space: nowrap;
+}
+
+.cash-flow-micro-table td.highlight-net {
+  color: var(--accent-blue);
 }
 
 /* KPI View Toggle & Donut Chart Styling */
@@ -1205,25 +1277,174 @@ input[type=number] {
 .piti-view-container {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   transition: opacity 0.25s ease;
+  padding-top: 4px;
 }
 
 .piti-view-container.hidden {
   display: none !important;
 }
 
+/* PITI Hero Block & Sublabel */
+.piti-hero-block {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.piti-hero-sublabel {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Extra & ARM Summary Badges */
+.piti-summary-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.piti-badge-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--panel-border);
+}
+
+.piti-badge-row.extra-row {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.22);
+}
+
+.piti-badge-row.extra-row .badge-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.piti-badge-row.extra-row strong {
+  color: var(--primary-focus);
+  font-weight: 700;
+}
+
+.piti-badge-row.arm-row {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: var(--warning);
+}
+
+.piti-badge-row.arm-row strong {
+  color: #f59e0b;
+}
+
+[data-theme="light"] .piti-badge-row.extra-row {
+  background: rgba(79, 70, 229, 0.06);
+  border-color: rgba(79, 70, 229, 0.18);
+}
+
+[data-theme="light"] .piti-badge-row.arm-row {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+/* Component Breakdown Micro Grid */
+.piti-breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(65px, 1fr));
+  gap: 6px;
+  margin-top: 2px;
+  padding-top: 8px;
+  border-top: 1px solid var(--panel-border);
+}
+
+.piti-component-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--panel-border);
+  transition: all 0.2s ease;
+}
+
+[data-theme="light"] .piti-component-chip {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.chip-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.component-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.component-dot.pi { background: #6366f1; }
+.component-dot.tax { background: #06b6d4; }
+.component-dot.ins { background: #8b5cf6; }
+.component-dot.pmi { background: #ef4444; }
+
+.component-name {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.piti-component-chip strong {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.piti-component-chip.pmi-chip {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.piti-component-chip.pmi-chip strong {
+  color: #ef4444;
+}
+
+[data-theme="light"] .piti-component-chip.pmi-chip {
+  background: rgba(239, 68, 68, 0.06);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+#breakdown-pmi-wrapper {
+  display: flex !important;
+}
+
+#breakdown-pmi-wrapper[style*="display: none"] {
+  display: none !important;
+}
+
 .piti-donut-container {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 4px 0;
+  gap: 16px;
+  padding: 8px 4px;
 }
 
 .donut-chart-wrapper {
   position: relative;
-  width: 86px;
-  height: 86px;
+  width: 90px;
+  height: 90px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -1243,39 +1464,84 @@ input[type=number] {
 
 .donut-total-val {
   font-family: var(--font-display);
-  font-size: 0.92rem;
+  font-size: 0.90rem;
   font-weight: 800;
   color: var(--text-primary);
+  letter-spacing: -0.01em;
 }
 
 .donut-total-sub {
-  font-size: 0.58rem;
+  font-size: 0.55rem;
   font-weight: 600;
   color: var(--text-muted);
   text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 1px;
 }
 
 .donut-legend-grid {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 6px;
   flex-grow: 1;
   min-width: 0;
 }
 
-.legend-chip {
+.legend-chip,
+.legend-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
-  font-size: 0.72rem;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.03);
+  gap: 8px;
+  font-size: 0.76rem;
+  padding: 2px 0;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.06) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
 
-[data-theme="light"] .legend-chip {
-  background: #f8fafc;
+.legend-chip:last-child,
+.legend-row:last-child {
+  border-bottom: none !important;
+}
+
+[data-theme="light"] .legend-chip,
+[data-theme="light"] .legend-row {
+  background: transparent !important;
+  border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.legend-chip-left,
+.legend-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.chip-dot,
+.legend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.chip-label,
+.legend-label {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 0.74rem;
+  white-space: nowrap;
+}
+
+.chip-val,
+.legend-val {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 0.78rem;
 }
 
 .legend-chip-left {
