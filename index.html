@@ -393,13 +393,32 @@
             </div>
           </div>
 
-          <!-- Card 3: Total Interest Saved -->
-          <div class="kpi-card success">
+          <!-- Card 3: Total Interest Saved with Interactive Savings Breakdown Chips -->
+          <div class="kpi-card success" id="kpi-interest-saved-card">
             <div class="kpi-header">
               <span>Total Interest Saved</span>
               <i class="fa-solid fa-piggy-bank"></i>
             </div>
             <div class="kpi-value" id="kpi-interest-saved">$0.00</div>
+            
+            <!-- Micro-Pill Savings Breakdown Chips -->
+            <div class="savings-chips-container" id="savings-chips-container">
+              <div class="savings-chip monthly active" id="chip-savings-monthly" title="Click to edit Extra Monthly Payment" role="button" tabindex="0">
+                <div class="savings-chip-header">
+                  <i class="fa-solid fa-calendar-check"></i>
+                  <span>Monthly Extra</span>
+                </div>
+                <div class="savings-chip-value" id="savings-monthly-val">$0.00</div>
+              </div>
+              <div class="savings-chip lump-sum dimmed" id="chip-savings-lump" title="Click to edit One-Time Lump Sum Payment" role="button" tabindex="0">
+                <div class="savings-chip-header">
+                  <i class="fa-solid fa-bolt"></i>
+                  <span>Lump Sum</span>
+                </div>
+                <div class="savings-chip-value" id="savings-lump-val">$0.00</div>
+              </div>
+            </div>
+
             <div class="kpi-footer">
               <span>Savings Rate: </span>
               <strong id="kpi-interest-savings-rate">0.0%</strong>

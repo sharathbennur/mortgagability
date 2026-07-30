@@ -1301,6 +1301,136 @@ input[type=number] {
   font-weight: 700;
 }
 
+/* Interactive Savings Breakdown Micro-Pill Chips */
+.savings-chips-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 6px 0;
+  width: 100%;
+}
+
+.savings-chip {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--panel-border);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  min-width: 0;
+}
+
+.savings-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.savings-chip-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.savings-chip-header i {
+  font-size: 0.75rem;
+}
+
+.savings-chip-value {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Monthly Active State */
+.savings-chip.monthly.active {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.savings-chip.monthly.active .savings-chip-header i,
+.savings-chip.monthly.active .savings-chip-header span {
+  color: #10b981;
+}
+
+.savings-chip.monthly.active .savings-chip-value {
+  color: #10b981;
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+[data-theme="light"] .savings-chip.monthly.active {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+[data-theme="light"] .savings-chip.monthly.active .savings-chip-header i,
+[data-theme="light"] .savings-chip.monthly.active .savings-chip-header span,
+[data-theme="light"] .savings-chip.monthly.active .savings-chip-value {
+  color: #047857;
+  text-shadow: none;
+}
+
+/* Lump Sum Active State */
+.savings-chip.lump-sum.active {
+  background: rgba(139, 92, 246, 0.12);
+  border-color: rgba(139, 92, 246, 0.35);
+}
+
+.savings-chip.lump-sum.active .savings-chip-header i,
+.savings-chip.lump-sum.active .savings-chip-header span {
+  color: #a78bfa;
+}
+
+.savings-chip.lump-sum.active .savings-chip-value {
+  color: #a78bfa;
+  text-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+}
+
+[data-theme="light"] .savings-chip.lump-sum.active {
+  background: #f5f3ff;
+  border-color: #ddd6fe;
+}
+
+[data-theme="light"] .savings-chip.lump-sum.active .savings-chip-header i,
+[data-theme="light"] .savings-chip.lump-sum.active .savings-chip-header span,
+[data-theme="light"] .savings-chip.lump-sum.active .savings-chip-value {
+  color: #6d28d9;
+  text-shadow: none;
+}
+
+/* Dimmed State */
+.savings-chip.dimmed {
+  opacity: 0.6;
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="light"] .savings-chip.dimmed {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .savings-chip.dimmed .savings-chip-header,
+[data-theme="light"] .savings-chip.dimmed .savings-chip-value {
+  color: #94a3b8;
+}
+
 .kpi-card.success .kpi-value {
   color: var(--success);
   text-shadow: 0 0 12px var(--success-glow);
