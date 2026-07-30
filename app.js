@@ -302,6 +302,35 @@ function calculateAmortizationSchedules(
   const accMonths = acceleratedSchedule.length;
   const monthsSaved = Math.max(0, stdMonths - accMonths);
 
+  // Breakdown of Interest Savings by Source (Extra Monthly vs One-Time Lump Sum)
+  let savingsMonthlyAllocated = 0;
+  let savingsLumpSumAllocated = 0;
+
+  if (interestSaved > 0) {
+    if (extraMonthly > 0 && oneTimeExtra > 0) {
+      const interestWithMonthlyOnly = simulateTotalInterest(principal, annualRate, termYears, extraMonthly, 0, oneTimeMonth, isArm, armFixedYears, armAdjustedRate);
+      const interestWithLumpOnly = simulateTotalInterest(principal, annualRate, termYears, 0, oneTimeExtra, oneTimeMonth, isArm, armFixedYears, armAdjustedRate);
+      
+      const standaloneMonthly = Math.max(0, stdTotalInterest - interestWithMonthlyOnly);
+      const standaloneLump = Math.max(0, stdTotalInterest - interestWithLumpOnly);
+      const totalStandalone = standaloneMonthly + standaloneLump;
+
+      if (totalStandalone > 0) {
+        savingsMonthlyAllocated = (standaloneMonthly / totalStandalone) * interestSaved;
+        savingsLumpSumAllocated = interestSaved - savingsMonthlyAllocated;
+      } else {
+        savingsMonthlyAllocated = interestSaved;
+        savingsLumpSumAllocated = 0;
+      }
+    } else if (extraMonthly > 0) {
+      savingsMonthlyAllocated = interestSaved;
+      savingsLumpSumAllocated = 0;
+    } else if (oneTimeExtra > 0) {
+      savingsMonthlyAllocated = 0;
+      savingsLumpSumAllocated = interestSaved;
+    }
+  }
+
   return {
     standard: standardSchedule,
     accelerated: acceleratedSchedule,
@@ -317,11 +346,50 @@ function calculateAmortizationSchedules(
       acceleratedTotalInterest: accTotalInterest,
       acceleratedTotalPaid: accTotalPaid,
       interestSaved: interestSaved,
+      savingsMonthlyAllocated: savingsMonthlyAllocated,
+      savingsLumpSumAllocated: savingsLumpSumAllocated,
       standardMonths: stdMonths,
       acceleratedMonths: accMonths,
       monthsSaved: monthsSaved
     }
   };
+}
+
+/**
+ * Lightweight simulation helper to compute total interest under specified extra payment conditions.
+ */
+function simulateTotalInterest(principal, initialRate, termYears, extraMonthly = 0, oneTimeExtra = 0, oneTimeMonth = 12, isArm = false, armFixedYears = 5, armAdjustedRate = 8) {
+  let balance = principal;
+  let totalInterest = 0;
+  const initialMonthlyRate = (initialRate / 100) / 12;
+  const adjustedMonthlyRate = (armAdjustedRate / 100) / 12;
+  const armFixedMonths = armFixedYears * 12;
+  let basePayment = initialMonthlyRate === 0 ? principal / (termYears * 12) : calculateMonthlyPayment(principal, initialRate, termYears);
+  
+  let m = 1;
+  while (balance > 0 && m <= 600) {
+    if (isArm && m === armFixedMonths + 1) {
+      const remainingTermYears = Math.max(1, termYears - (armFixedMonths / 12));
+      basePayment = calculateMonthlyPayment(balance, armAdjustedRate, remainingTermYears);
+    }
+    const currentRate = (isArm && m > armFixedMonths) ? adjustedMonthlyRate : initialMonthlyRate;
+    const interestPaid = balance * currentRate;
+    let scheduledPayment = basePayment;
+    let basePrincipalPaid = scheduledPayment - interestPaid;
+    if (balance + interestPaid < scheduledPayment) {
+      basePrincipalPaid = balance;
+    }
+    if (basePrincipalPaid < 0) basePrincipalPaid = 0;
+
+    let appliedExtra = extraMonthly + (m === oneTimeMonth ? oneTimeExtra : 0);
+    let remainingAfterBase = balance - basePrincipalPaid;
+    if (appliedExtra > remainingAfterBase) appliedExtra = remainingAfterBase;
+
+    totalInterest += interestPaid;
+    balance = Math.max(0, balance - (basePrincipalPaid + appliedExtra));
+    m++;
+  }
+  return totalInterest;
 }
 
 // ==========================================================================
@@ -556,6 +624,42 @@ function updateUI() {
     ? (summary.interestSaved / summary.standardTotalInterest) * 100 
     : 0;
   elKpiInterestSavingsRate.textContent = `${savingsRate.toFixed(1)}%`;
+
+  // Update Savings Breakdown Micro-Pill Chips
+  const elSavingsMonthlyVal = document.getElementById('savings-monthly-val');
+  const elSavingsLumpVal = document.getElementById('savings-lump-val');
+  const elChipMonthly = document.getElementById('chip-savings-monthly');
+  const elChipLump = document.getElementById('chip-savings-lump');
+
+  const extraMonthlyVal = parseFloat(elExtraMonthly.value) || 0;
+  const oneTimeExtraVal = parseFloat(elOneTimeExtra.value) || 0;
+
+  if (elSavingsMonthlyVal) {
+    elSavingsMonthlyVal.textContent = formatCurrency(summary.savingsMonthlyAllocated || 0);
+  }
+  if (elSavingsLumpVal) {
+    elSavingsLumpVal.textContent = formatCurrency(summary.savingsLumpSumAllocated || 0);
+  }
+
+  if (elChipMonthly) {
+    if (extraMonthlyVal > 0) {
+      elChipMonthly.classList.remove('dimmed');
+      elChipMonthly.classList.add('active');
+    } else {
+      elChipMonthly.classList.add('dimmed');
+      elChipMonthly.classList.remove('active');
+    }
+  }
+
+  if (elChipLump) {
+    if (oneTimeExtraVal > 0) {
+      elChipLump.classList.remove('dimmed');
+      elChipLump.classList.add('active');
+    } else {
+      elChipLump.classList.add('dimmed');
+      elChipLump.classList.remove('active');
+    }
+  }
 
   // Time saved display
   const monthsSaved = summary.monthsSaved;
@@ -1709,6 +1813,7 @@ function setupEventHandlers() {
   }
 
   setupPitiViewToggle();
+  setupSavingsChipHandlers();
 }
 
 // ==========================================================================
@@ -1811,6 +1916,45 @@ function setupPitiViewToggle() {
       viewChart.classList.remove('hidden');
       viewText.classList.add('hidden');
       recalculate();
+    });
+  }
+}
+
+function setupSavingsChipHandlers() {
+  const elChipMonthly = document.getElementById('chip-savings-monthly');
+  const elChipLump = document.getElementById('chip-savings-lump');
+  const elExtraMonthly = document.getElementById('extra-monthly');
+  const elOneTimeExtra = document.getElementById('one-time-extra');
+
+  if (elChipMonthly && elExtraMonthly) {
+    const handleMonthlyClick = () => {
+      elExtraMonthly.focus();
+      if (typeof elExtraMonthly.scrollIntoView === 'function') {
+        elExtraMonthly.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    };
+    elChipMonthly.addEventListener('click', handleMonthlyClick);
+    elChipMonthly.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleMonthlyClick();
+      }
+    });
+  }
+
+  if (elChipLump && elOneTimeExtra) {
+    const handleLumpClick = () => {
+      elOneTimeExtra.focus();
+      if (typeof elOneTimeExtra.scrollIntoView === 'function') {
+        elOneTimeExtra.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    };
+    elChipLump.addEventListener('click', handleLumpClick);
+    elChipLump.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleLumpClick();
+      }
     });
   }
 }

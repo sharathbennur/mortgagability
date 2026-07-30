@@ -252,6 +252,36 @@ describe('2. UI & Integration Tests', () => {
     elDownPayment.dispatchEvent(new Event('input'));
   });
 
+  it('should render interactive micro-pill chips for interest savings breakdown', () => {
+    const elExtraMonthly = document.getElementById('extra-monthly');
+    const elOneTimeExtra = document.getElementById('one-time-extra');
+    const elChipMonthly = document.getElementById('chip-savings-monthly');
+    const elChipLump = document.getElementById('chip-savings-lump');
+    const elValMonthly = document.getElementById('savings-monthly-val');
+    const elValLump = document.getElementById('savings-lump-val');
+
+    // 1. Only Extra Monthly Payment = $200
+    elExtraMonthly.value = 200;
+    elOneTimeExtra.value = 0;
+    elExtraMonthly.dispatchEvent(new Event('input'));
+
+    expect(elChipMonthly.className).toContain('active');
+    expect(elChipLump.className).toContain('dimmed');
+    expect(elValMonthly.textContent).not.toBe('$0.00');
+
+    // 2. Add One-Time Lump Sum = $10,000
+    elOneTimeExtra.value = 10000;
+    elOneTimeExtra.dispatchEvent(new Event('input'));
+
+    expect(elChipMonthly.className).toContain('active');
+    expect(elChipLump.className).toContain('active');
+    expect(elValLump.textContent).not.toBe('$0.00');
+
+    // Reset One-Time Lump Sum back to 0
+    elOneTimeExtra.value = 0;
+    elOneTimeExtra.dispatchEvent(new Event('input'));
+  });
+
   it('should apply extra payments from target term calculator when clicked', () => {
     const elTargetTerm = document.getElementById('target-term');
     const elBtnApplyTarget = document.getElementById('btn-apply-target');
