@@ -532,6 +532,16 @@
               <i class="fa-solid fa-chart-line"></i>
               <h2>Amortization &amp; Payoff Curves</h2>
             </div>
+            <div class="chart-zoom-presets" id="chart-zoom-presets">
+              <span class="zoom-label"><i class="fa-solid fa-magnifying-glass-plus"></i> Zoom:</span>
+              <button type="button" class="btn btn-xs btn-zoom-preset" data-zoom="5Y">5Y</button>
+              <button type="button" class="btn btn-xs btn-zoom-preset" data-zoom="10Y">10Y</button>
+              <button type="button" class="btn btn-xs btn-zoom-preset" data-zoom="15Y">15Y</button>
+              <button type="button" class="btn btn-xs btn-zoom-preset active" data-zoom="full">Full Term</button>
+            </div>
+          </div>
+          <div class="chart-milestones-bar" id="chart-milestones-bar">
+            <!-- Dynamic Milestone Event Flag Badges rendered via JavaScript -->
           </div>
           <div class="chart-container">
             <canvas id="payoff-chart"></canvas>

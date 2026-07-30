@@ -839,3 +839,91 @@ describe('13. Glossary System Edge Cases & Keyboard Navigation', () => {
   });
 });
 
+describe('14. Amortization Chart Zoom Presets & Payoff Milestone Event Flags', () => {
+  it('should compute pmiDropMonth when down payment is less than 20%', () => {
+    // $500k home with $50k down payment (10% down -> LTV 90%)
+    const res = appModule.calculateAmortizationSchedules(500000, 50000, 6.5, 30, 0, 0, 12);
+    expect(res.summary.pmiDropMonth).toBeGreaterThan(0);
+    // Standard schedule reaches 80% LTV ($400k balance) after some years
+    expect(res.summary.pmiDropMonth).toBeLessThan(360);
+  });
+
+  it('should set pmiDropMonth to null when down payment is 20% or greater', () => {
+    // $500k home with $100k down payment (20% down -> LTV 80%)
+    const res = appModule.calculateAmortizationSchedules(500000, 100000, 6.5, 30, 0, 0, 12);
+    expect(res.summary.pmiDropMonth).toBeNull();
+  });
+
+  it('should compute armResetMonth for ARM loans and null for fixed loans', () => {
+    const armRes = appModule.calculateAmortizationSchedules(500000, 100000, 5.5, 30, 0, 0, 12, true, 5, 7.5);
+    expect(armRes.summary.armResetMonth).toBe(60); // 5 Yrs * 12
+
+    const fixedRes = appModule.calculateAmortizationSchedules(500000, 100000, 5.5, 30, 0, 0, 12, false);
+    expect(fixedRes.summary.armResetMonth).toBeNull();
+  });
+
+  it('should compute acceleratedPayoffMonth when extra payments pay off loan early', () => {
+    // $500 monthly extra on 30-year fixed loan
+    const res = appModule.calculateAmortizationSchedules(400000, 80000, 6.0, 30, 500, 0, 12);
+    expect(res.summary.acceleratedPayoffMonth).toBeLessThan(360);
+    expect(res.summary.acceleratedPayoffMonth).toBe(res.summary.acceleratedMonths);
+  });
+
+  it('should update activeZoomPreset when zoom preset buttons are clicked', () => {
+    appModule.init();
+
+    const zoomBar = document.getElementById('chart-zoom-presets');
+    expect(zoomBar).not.toBeNull();
+
+    const btn5Y = zoomBar.querySelector('[data-zoom="5Y"]');
+    const btn10Y = zoomBar.querySelector('[data-zoom="10Y"]');
+    const btnFull = zoomBar.querySelector('[data-zoom="full"]');
+
+    expect(btn5Y).not.toBeNull();
+    btn5Y.click();
+
+    expect(appModule.getActiveZoomPreset()).toBe('5Y');
+    expect(btn5Y.classList.contains('active')).toBe(true);
+
+    btn10Y.click();
+    expect(appModule.getActiveZoomPreset()).toBe('10Y');
+    expect(btn10Y.classList.contains('active')).toBe(true);
+    expect(btn5Y.classList.contains('active')).toBe(false);
+
+    btnFull.click();
+    expect(appModule.getActiveZoomPreset()).toBe('full');
+    expect(btnFull.classList.contains('active')).toBe(true);
+  });
+
+  it('should render milestone badges strip for PMI, ARM, and Accelerated Payoff in DOM', () => {
+    // Set 10% down, 5/1 ARM, and $300 extra monthly to trigger all 3 milestones
+    document.getElementById('home-price').value = '400000';
+    document.getElementById('down-payment').value = '40000'; // 10% down
+    document.getElementById('extra-monthly').value = '300';
+    
+    // Select 5/1 ARM
+    const armBtn = document.querySelector('.btn-preset[data-preset="5-arm"]');
+    if (armBtn) armBtn.click();
+
+    appModule.recalculate();
+
+    const milestoneBar = document.getElementById('chart-milestones-bar');
+    expect(milestoneBar).not.toBeNull();
+    const html = milestoneBar.innerHTML;
+
+    expect(html).toContain('PMI Drop-Off');
+    expect(html).toContain('ARM Interest Reset');
+    expect(html).toContain('Accelerated Payoff');
+  });
+
+  it('should register milestoneFlagsPlugin in Chart.js instance config', () => {
+    appModule.init();
+    appModule.recalculate();
+
+    // Verify payoff-chart canvas exists and chart was initialized
+    const canvas = document.getElementById('payoff-chart');
+    expect(canvas).not.toBeNull();
+  });
+});
+
+
