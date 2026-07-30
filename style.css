@@ -1740,6 +1740,111 @@ input[type=number] {
   width: 100%;
 }
 
+/* Time Horizon Zoom Presets */
+.chart-zoom-presets {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 20px;
+  padding: 3px 6px;
+}
+
+.zoom-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-right: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 4px;
+}
+
+.btn-zoom-preset {
+  border-radius: 14px;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-zoom-preset:hover:not(.active) {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.btn-zoom-preset.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px var(--primary-glow);
+}
+
+/* Milestone Event Flag Bar & Badges */
+.chart-milestones-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  min-height: 28px;
+}
+
+.milestone-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  cursor: default;
+}
+
+.milestone-badge.pmi {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.milestone-badge.arm {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #f59e0b;
+}
+
+.milestone-badge.payoff {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #10b981;
+}
+
+[data-theme="light"] .milestone-badge.pmi {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+[data-theme="light"] .milestone-badge.arm {
+  background: #fffbebf;
+  border-color: #fde68a;
+  color: #d97706;
+}
+
+[data-theme="light"] .milestone-badge.payoff {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #059669;
+}
+
 /* Target Term Calculator Section */
 .target-calc-grid {
   display: grid;

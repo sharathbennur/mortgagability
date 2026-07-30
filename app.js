@@ -13,6 +13,7 @@ let chartInstance = null;
 let activeTableViewMode = 'annual'; // 'annual' or 'monthly'
 let currentTablePage = 1;
 const rowsPerPage = 12; // 1 year of months per page for monthly view
+let activeZoomPreset = 'full'; // '5Y', '10Y', '15Y', or 'full'
 
 // DOM Element Selections
 const elHomePrice = document.getElementById('home-price');
@@ -331,6 +332,21 @@ function calculateAmortizationSchedules(
     }
   }
 
+  // Calculate milestone event months
+  let pmiDropMonth = null;
+  const downPercent = homePrice > 0 ? (downPayment / homePrice) * 100 : 0;
+  if (downPercent < 20 && homePrice > 0) {
+    const target80Balance = homePrice * 0.8;
+    const pmiRow = acceleratedSchedule.find(r => r.endingBalance <= target80Balance) ||
+                   standardSchedule.find(r => r.endingBalance <= target80Balance);
+    if (pmiRow) {
+      pmiDropMonth = pmiRow.month;
+    }
+  }
+
+  const armResetMonth = isArm ? armFixedMonths : null;
+  const acceleratedPayoffMonth = (monthsSaved > 0 && accMonths < stdMonths) ? accMonths : null;
+
   return {
     standard: standardSchedule,
     accelerated: acceleratedSchedule,
@@ -350,7 +366,10 @@ function calculateAmortizationSchedules(
       savingsLumpSumAllocated: savingsLumpSumAllocated,
       standardMonths: stdMonths,
       acceleratedMonths: accMonths,
-      monthsSaved: monthsSaved
+      monthsSaved: monthsSaved,
+      pmiDropMonth: pmiDropMonth,
+      armResetMonth: armResetMonth,
+      acceleratedPayoffMonth: acceleratedPayoffMonth
     }
   };
 }
@@ -691,9 +710,63 @@ function updateUI() {
   if (months > 0) termStr += `${termStr ? ' ' : ''}${months} Mo${months > 1 ? 's' : ''}`;
   elKpiPayoffTerm.textContent = termStr || "0 Mos";
 
+  // Update Milestone Event Summary Badges
+  updateMilestoneSummaryStrip();
+
   // Re-render chart and table
   renderChart();
   renderTable();
+}
+
+/**
+ * Renders milestone event flag badges above the chart.
+ */
+function updateMilestoneSummaryStrip() {
+  const container = document.getElementById('chart-milestones-bar');
+  if (!container) return;
+
+  container.innerHTML = '';
+  const summary = currentSchedule.summary || {};
+  const milestonePills = [];
+
+  if (summary.pmiDropMonth) {
+    const yr = (summary.pmiDropMonth / 12).toFixed(1);
+    milestonePills.push(`
+      <div class="milestone-badge pmi" title="PMI cancels when Loan-to-Value drops below 80%">
+        <span>🚩</span>
+        <span><strong>PMI Drop-Off:</strong> Month ${summary.pmiDropMonth} (${yr} Yrs)</span>
+      </div>
+    `);
+  }
+
+  if (summary.isArm && summary.armResetMonth) {
+    milestonePills.push(`
+      <div class="milestone-badge arm" title="ARM interest rate resets from initial rate to variable reset rate">
+        <span>⚡</span>
+        <span><strong>ARM Interest Reset:</strong> Month ${summary.armResetMonth} (Yr ${summary.armFixedYears}) @ ${summary.armAdjustedRate.toFixed(2)}%</span>
+      </div>
+    `);
+  }
+
+  if (summary.acceleratedPayoffMonth) {
+    const yr = (summary.acceleratedPayoffMonth / 12).toFixed(1);
+    milestonePills.push(`
+      <div class="milestone-badge payoff" title="Loan is 100% paid off early via extra principal payments">
+        <span>🏁</span>
+        <span><strong>Accelerated Payoff:</strong> Month ${summary.acceleratedPayoffMonth} (${yr} Yrs)</span>
+      </div>
+    `);
+  }
+
+  if (milestonePills.length > 0) {
+    container.innerHTML = milestonePills.join('');
+  } else {
+    container.innerHTML = `
+      <div class="milestone-badge" style="background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.05); color: var(--text-muted); font-size: 0.72rem;">
+        <i class="fa-solid fa-circle-info"></i> Standard fixed loan schedule without active milestone resets.
+      </div>
+    `;
+  }
 }
 
 // ==========================================================================
@@ -763,10 +836,24 @@ function toggleTheme() {
 /**
  * Renders the Chart.js visualizer.
  */
+function setZoomPreset(preset) {
+  activeZoomPreset = preset || 'full';
+  const zoomButtons = document.querySelectorAll('.btn-zoom-preset');
+  zoomButtons.forEach(b => {
+    if (b.getAttribute('data-zoom') === activeZoomPreset) {
+      b.classList.add('active');
+    } else {
+      b.classList.remove('active');
+    }
+  });
+  renderChart();
+}
+
 function renderChart() {
-  const ctx = document.getElementById('payoff-chart').getContext('2d');
+  const chartCanvas = document.getElementById('payoff-chart');
+  if (!chartCanvas) return;
+  const ctx = chartCanvas.getContext('2d');
   
-  // If chart exists, destroy it to refresh completely
   if (chartInstance) {
     chartInstance.destroy();
   }
@@ -776,12 +863,38 @@ function renderChart() {
   const chartMutedColor = isLight ? '#64748b' : '#9ca3af';
   const chartGridColor = isLight ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.05)';
 
-  const standardData = currentSchedule.standard;
-  const acceleratedData = currentSchedule.accelerated;
+  const standardData = currentSchedule.standard || [];
+  const acceleratedData = currentSchedule.accelerated || [];
+  const summary = currentSchedule.summary || {};
 
-  const maxMonths = Math.max(standardData.length, acceleratedData.length);
-  const labels = [];
+  const fullMaxMonths = Math.max(standardData.length, acceleratedData.length);
   
+  let targetMaxMonths = fullMaxMonths;
+  if (activeZoomPreset === '5Y') targetMaxMonths = Math.min(60, fullMaxMonths);
+  else if (activeZoomPreset === '10Y') targetMaxMonths = Math.min(120, fullMaxMonths);
+  else if (activeZoomPreset === '15Y') targetMaxMonths = Math.min(180, fullMaxMonths);
+
+  const sampleStep = Math.max(1, Math.round(targetMaxMonths / 25));
+  const sampledMonthSet = new Set();
+  
+  for (let m = 0; m <= targetMaxMonths; m += sampleStep) {
+    sampledMonthSet.add(m);
+  }
+  sampledMonthSet.add(targetMaxMonths);
+
+  if (summary.pmiDropMonth && summary.pmiDropMonth <= targetMaxMonths) {
+    sampledMonthSet.add(summary.pmiDropMonth);
+  }
+  if (summary.armResetMonth && summary.armResetMonth <= targetMaxMonths) {
+    sampledMonthSet.add(summary.armResetMonth);
+  }
+  if (summary.acceleratedPayoffMonth && summary.acceleratedPayoffMonth <= targetMaxMonths) {
+    sampledMonthSet.add(summary.acceleratedPayoffMonth);
+  }
+
+  const sortedMonths = Array.from(sampledMonthSet).sort((a, b) => a - b);
+
+  const labels = [];
   const standardBalanceDataset = [];
   const acceleratedBalanceDataset = [];
   const standardInterestDataset = [];
@@ -789,14 +902,13 @@ function renderChart() {
 
   const today = new Date();
   const startYear = today.getFullYear();
-  const startMonth = today.getMonth() + 1; // 0-indexed + 1 = next month
+  const startMonth = today.getMonth() + 1;
 
-  for (let m = 0; m <= maxMonths; m += Math.max(1, Math.round(maxMonths / 30))) {
+  sortedMonths.forEach(m => {
     const date = new Date(startYear, startMonth + m, 1);
     const label = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
     labels.push(label);
 
-    // Standard Schedule Data points
     const stdPoint = standardData.find(item => item.month === m) || 
                      (m > standardData.length ? standardData[standardData.length - 1] : null);
     
@@ -804,14 +916,13 @@ function renderChart() {
       standardBalanceDataset.push(stdPoint.endingBalance);
       standardInterestDataset.push(stdPoint.cumulativeInterest);
     } else if (m === 0) {
-      standardBalanceDataset.push(currentSchedule.summary.principal);
+      standardBalanceDataset.push(summary.principal || 0);
       standardInterestDataset.push(0);
     } else {
       standardBalanceDataset.push(0);
-      standardInterestDataset.push(currentSchedule.summary.standardTotalInterest);
+      standardInterestDataset.push(summary.standardTotalInterest || 0);
     }
 
-    // Accelerated Schedule Data points
     const accPoint = acceleratedData.find(item => item.month === m) ||
                      (m > acceleratedData.length ? acceleratedData[acceleratedData.length - 1] : null);
 
@@ -819,13 +930,101 @@ function renderChart() {
       acceleratedBalanceDataset.push(accPoint.endingBalance);
       acceleratedInterestDataset.push(accPoint.cumulativeInterest);
     } else if (m === 0) {
-      acceleratedBalanceDataset.push(currentSchedule.summary.principal);
+      acceleratedBalanceDataset.push(summary.principal || 0);
       acceleratedInterestDataset.push(0);
     } else {
       acceleratedBalanceDataset.push(0);
-      acceleratedInterestDataset.push(currentSchedule.summary.acceleratedTotalInterest);
+      acceleratedInterestDataset.push(summary.acceleratedTotalInterest || 0);
     }
-  }
+  });
+
+  const milestoneFlagsPlugin = {
+    id: 'milestoneFlagsPlugin',
+    afterDatasetsDraw(chart) {
+      if (!chart.scales || !chart.scales.x || !chart.scales.y) return;
+      const { ctx, chartArea, scales } = chart;
+      if (!chartArea || !scales.x || !scales.y) return;
+
+      const top = chartArea.top;
+      const bottom = chartArea.bottom;
+      const left = chartArea.left;
+      const right = chartArea.right;
+
+      const activeMilestones = [];
+      if (summary.pmiDropMonth && summary.pmiDropMonth <= targetMaxMonths) {
+        activeMilestones.push({
+          month: summary.pmiDropMonth,
+          label: '🚩 PMI Drop',
+          color: '#ef4444',
+          bgColor: isLight ? '#fef2f2' : 'rgba(239, 68, 68, 0.2)'
+        });
+      }
+      if (summary.isArm && summary.armResetMonth && summary.armResetMonth <= targetMaxMonths) {
+        activeMilestones.push({
+          month: summary.armResetMonth,
+          label: `⚡ ARM Reset (${summary.armAdjustedRate.toFixed(1)}%)`,
+          color: '#f59e0b',
+          bgColor: isLight ? '#fffbebf' : 'rgba(245, 158, 11, 0.2)'
+        });
+      }
+      if (summary.acceleratedPayoffMonth && summary.acceleratedPayoffMonth <= targetMaxMonths) {
+        activeMilestones.push({
+          month: summary.acceleratedPayoffMonth,
+          label: '🏁 Paid Off',
+          color: '#10b981',
+          bgColor: isLight ? '#ecfdf5' : 'rgba(16, 185, 129, 0.2)'
+        });
+      }
+
+      if (activeMilestones.length === 0) return;
+
+      ctx.save();
+      activeMilestones.forEach((ms, idx) => {
+        const pointIdx = sortedMonths.indexOf(ms.month);
+        if (pointIdx === -1) return;
+
+        const xPos = scales.x.getPixelForValue(pointIdx);
+        if (xPos < left || xPos > right) return;
+
+        ctx.beginPath();
+        ctx.setLineDash([4, 4]);
+        ctx.strokeStyle = ms.color;
+        ctx.lineWidth = 1.5;
+        ctx.moveTo(xPos, top);
+        ctx.lineTo(xPos, bottom);
+        ctx.stroke();
+
+        ctx.setLineDash([]);
+        ctx.font = 'bold 10px "Plus Jakarta Sans", sans-serif';
+        const textWidth = ctx.measureText(ms.label).width;
+        const pillPaddingH = 6;
+        const pillHeight = 18;
+        const pillWidth = textWidth + (pillPaddingH * 2);
+        
+        const pillY = top + 6 + (idx * 22);
+        let pillX = xPos - (pillWidth / 2);
+        pillX = Math.max(left + 2, Math.min(pillX, right - pillWidth - 2));
+
+        ctx.fillStyle = ms.bgColor;
+        ctx.strokeStyle = ms.color;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(pillX, pillY, pillWidth, pillHeight, 4);
+        } else {
+          ctx.rect(pillX, pillY, pillWidth, pillHeight);
+        }
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = ms.color;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(ms.label, pillX + (pillWidth / 2), pillY + (pillHeight / 2));
+      });
+      ctx.restore();
+    }
+  };
 
   chartInstance = new Chart(ctx, {
     type: 'line',
@@ -835,7 +1034,7 @@ function renderChart() {
         {
           label: 'Accelerated Principal Balance',
           data: acceleratedBalanceDataset,
-          borderColor: '#10b981', // Emerald
+          borderColor: '#10b981',
           backgroundColor: 'transparent',
           fill: false,
           tension: 0.25,
@@ -846,7 +1045,7 @@ function renderChart() {
         {
           label: 'Standard Principal Balance',
           data: standardBalanceDataset,
-          borderColor: isLight ? '#4f46e5' : '#6366f1', // Indigo
+          borderColor: isLight ? '#4f46e5' : '#6366f1',
           backgroundColor: 'transparent',
           fill: false,
           tension: 0.25,
@@ -858,7 +1057,7 @@ function renderChart() {
         {
           label: 'Accelerated Cumulative Interest',
           data: acceleratedInterestDataset,
-          borderColor: '#f59e0b', // Amber
+          borderColor: '#f59e0b',
           backgroundColor: 'transparent',
           fill: false,
           tension: 0.25,
@@ -869,7 +1068,7 @@ function renderChart() {
         {
           label: 'Standard Cumulative Interest',
           data: standardInterestDataset,
-          borderColor: '#ef4444', // Red
+          borderColor: '#ef4444',
           backgroundColor: 'transparent',
           fill: false,
           tension: 0.25,
@@ -880,6 +1079,7 @@ function renderChart() {
         }
       ]
     },
+    plugins: [milestoneFlagsPlugin],
     options: {
       responsive: true,
       maintainAspectRatio: false,
@@ -1421,6 +1621,15 @@ let eventHandlersInitialized = false;
 function setupEventHandlers() {
   if (eventHandlersInitialized) return;
   eventHandlersInitialized = true;
+
+  // Time Horizon Zoom Presets
+  const zoomButtons = document.querySelectorAll('.btn-zoom-preset');
+  zoomButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const zoom = btn.getAttribute('data-zoom') || 'full';
+      setZoomPreset(zoom);
+    });
+  });
 
   // ARM Sliders Sync
   if (elArmFixedTerm && elArmFixedTermSlider) {
@@ -2342,6 +2551,10 @@ if (typeof window !== 'undefined' && !window.__TEST_ENVIRONMENT__) {
   window.addEventListener('DOMContentLoaded', init);
 }
 
+function getActiveZoomPreset() {
+  return activeZoomPreset;
+}
+
 // Export functions for testing
 export {
   calculateMonthlyPayment,
@@ -2362,5 +2575,7 @@ export {
   renderGlossaryCards,
   openHelpModal,
   closeHelpModal,
-  setupHelpHandlers
+  setupHelpHandlers,
+  setZoomPreset,
+  getActiveZoomPreset
 };
