@@ -495,7 +495,7 @@ describe('6. Theme Switcher & Persistence Tests', () => {
 
 describe('7. Help & Financial Glossary System Tests', () => {
   beforeEach(() => {
-    document.body.innerHTML = fs.readFileSync(path.resolve(__dirname, './index.html'), 'utf8');
+    appModule.closeHelpModal();
     appModule.setupHelpHandlers();
   });
 
@@ -552,6 +552,290 @@ describe('7. Help & Financial Glossary System Tests', () => {
 
     const card = modal.querySelector('[data-term-id="pmi"]');
     expect(card.classList.contains('term-pulse')).toBe(true);
+  });
+});
+
+describe('8. Amortization Table View & Pagination Tests', () => {
+  it('should toggle table between Annual and Monthly view modes and update table content', () => {
+    const btnAnnual = document.getElementById('btn-view-annual');
+    const btnMonthly = document.getElementById('btn-view-monthly');
+    const tablePagination = document.getElementById('table-pagination');
+    const tbody = document.getElementById('schedule-tbody');
+
+    // Click Annual View
+    btnAnnual.dispatchEvent(new Event('click'));
+    expect(btnAnnual.className).toContain('active');
+    expect(btnMonthly.className).not.toContain('active');
+    expect(tablePagination.style.display).toBe('none');
+    expect(tbody.children[0].textContent).toContain('Year 1');
+
+    // Click Monthly View
+    btnMonthly.dispatchEvent(new Event('click'));
+    expect(btnMonthly.className).toContain('active');
+    expect(btnAnnual.className).not.toContain('active');
+    expect(tablePagination.style.display).toBe('flex');
+    expect(tbody.children[0].textContent).toContain('Month 1');
+  });
+
+  it('should navigate through table pages and update pagination controls', () => {
+    const btnMonthly = document.getElementById('btn-view-monthly');
+    btnMonthly.dispatchEvent(new Event('click'));
+
+    const btnNext = document.getElementById('btn-next-page');
+    const btnPrev = document.getElementById('btn-prev-page');
+    const paginationInfo = document.getElementById('pagination-info');
+    const tbody = document.getElementById('schedule-tbody');
+
+    // On Page 1
+    expect(btnPrev.disabled).toBe(true);
+    expect(btnNext.disabled).toBe(false);
+    expect(paginationInfo.textContent).toContain('Page 1 of');
+    expect(tbody.children[0].textContent).toContain('Month 1');
+
+    // Click Next Page -> Page 2
+    btnNext.dispatchEvent(new Event('click'));
+    expect(btnPrev.disabled).toBe(false);
+    expect(paginationInfo.textContent).toContain('Page 2 of');
+    expect(tbody.children[0].textContent).toContain('Month 13');
+
+    // Click Prev Page -> back to Page 1
+    btnPrev.dispatchEvent(new Event('click'));
+    expect(btnPrev.disabled).toBe(true);
+    expect(paginationInfo.textContent).toContain('Page 1 of');
+    expect(tbody.children[0].textContent).toContain('Month 1');
+  });
+});
+
+describe('9. Target Term Payoff Calculator Deep Coverage', () => {
+  it('should update target calculations reactively when target term or principal input changes', () => {
+    const elTargetTerm = document.getElementById('target-term');
+    const elTargetPrincipal = document.getElementById('target-principal');
+    const elTargetExtraPayment = document.getElementById('target-extra-payment');
+    const elTargetTotalPayment = document.getElementById('target-total-payment');
+    const elTargetInterestSaved = document.getElementById('target-interest-saved');
+
+    // Set target term to 15 years
+    elTargetTerm.value = 15;
+    elTargetTerm.dispatchEvent(new Event('input'));
+
+    expect(elTargetExtraPayment.textContent).not.toBe('$0.00');
+    expect(elTargetTotalPayment.textContent).not.toBe('$0.00');
+    expect(elTargetInterestSaved.textContent).not.toBe('$0.00');
+
+    // Change target principal amount (e.g. 500,000)
+    elTargetPrincipal.value = 500000;
+    elTargetPrincipal.dispatchEvent(new Event('input'));
+
+    expect(elTargetExtraPayment.textContent).not.toBe('$0.00');
+  });
+
+  it('should reset target principal to active loan principal when reset button is clicked', () => {
+    const elHomePrice = document.getElementById('home-price');
+    const elDownPayment = document.getElementById('down-payment');
+    const elTargetPrincipal = document.getElementById('target-principal');
+    const btnReset = document.getElementById('btn-reset-target-principal');
+
+    elHomePrice.value = 500000;
+    elHomePrice.dispatchEvent(new Event('input'));
+    elDownPayment.value = 100000;
+    elDownPayment.dispatchEvent(new Event('input'));
+
+    // Change target principal to arbitrary value
+    elTargetPrincipal.value = 150000;
+
+    // Reset should set target principal to homePrice - downPayment = 400,000
+    btnReset.dispatchEvent(new Event('click'));
+    expect(parseFloat(elTargetPrincipal.value)).toBe(400000);
+  });
+});
+
+describe('10. ARM Presets & Parameter Input Controls', () => {
+  it('should set ARM parameters when 7/1 ARM or 10/1 ARM preset buttons are clicked', () => {
+    const btn7Arm = document.querySelector('.btn-preset[data-preset="7-arm"]');
+    const btn10Arm = document.querySelector('.btn-preset[data-preset="10-arm"]');
+    const btn30Fixed = document.querySelector('.btn-preset[data-preset="30-fixed"]');
+    const elArmFixedTerm = document.getElementById('arm-fixed-term');
+    const elArmSettingsPanel = document.getElementById('arm-settings-panel');
+
+    // Click 7/1 ARM preset
+    if (btn7Arm) {
+      btn7Arm.dispatchEvent(new Event('click'));
+      expect(elArmFixedTerm.value).toBe('7');
+      expect(elArmSettingsPanel.style.display).toBe('flex');
+    }
+
+    // Click 10/1 ARM preset
+    if (btn10Arm) {
+      btn10Arm.dispatchEvent(new Event('click'));
+      expect(elArmFixedTerm.value).toBe('10');
+      expect(elArmSettingsPanel.style.display).toBe('flex');
+    }
+
+    // Reset back to 30-yr fixed
+    if (btn30Fixed) {
+      btn30Fixed.dispatchEvent(new Event('click'));
+      expect(elArmSettingsPanel.style.display).toBe('none');
+    }
+  });
+
+  it('should update ARM reset payment display when fixed term or adjusted rate inputs change', () => {
+    const btn5Arm = document.querySelector('.btn-preset[data-preset="5-arm"]');
+    const elArmFixedTerm = document.getElementById('arm-fixed-term');
+    const elArmAdjustedRate = document.getElementById('arm-adjusted-rate');
+    const elArmBadgeAdjustedPayment = document.getElementById('arm-badge-adjusted-payment');
+
+    if (btn5Arm) {
+      btn5Arm.dispatchEvent(new Event('click'));
+    }
+
+    elArmFixedTerm.value = 5;
+    elArmAdjustedRate.value = 8.5;
+    elArmAdjustedRate.dispatchEvent(new Event('input'));
+
+    expect(elArmBadgeAdjustedPayment.textContent).not.toBe('$0.00/mo');
+  });
+});
+
+describe('11. Input Validation, Clamping & Formatting Edge Cases', () => {
+  it('should clamp down payment to home price if down payment input exceeds home price', () => {
+    const elHomePrice = document.getElementById('home-price');
+    const elDownPayment = document.getElementById('down-payment');
+
+    elHomePrice.value = 300000;
+    elHomePrice.dispatchEvent(new Event('input'));
+
+    elDownPayment.value = 400000;
+    elDownPayment.dispatchEvent(new Event('input'));
+
+    expect(parseFloat(elDownPayment.value)).toBe(300000);
+  });
+
+  it('should clamp down payment percentage within range [0, 99]', () => {
+    const elHomePrice = document.getElementById('home-price');
+    const elDownPaymentPercent = document.getElementById('down-payment-percent');
+    const elDownPayment = document.getElementById('down-payment');
+
+    elHomePrice.value = 400000;
+    elHomePrice.dispatchEvent(new Event('input'));
+
+    // Test > 99%
+    elDownPaymentPercent.value = 105;
+    elDownPaymentPercent.dispatchEvent(new Event('input'));
+    expect(parseFloat(elDownPaymentPercent.value)).toBe(99);
+    expect(parseFloat(elDownPayment.value)).toBe(396000);
+
+    // Test < 0%
+    elDownPaymentPercent.value = -10;
+    elDownPaymentPercent.dispatchEvent(new Event('input'));
+    expect(parseFloat(elDownPaymentPercent.value)).toBe(0);
+    expect(parseFloat(elDownPayment.value)).toBe(0);
+  });
+
+  it('should format currency correctly for edge case inputs', () => {
+    expect(appModule.formatCurrency(0)).toBe('$0.00');
+    expect(appModule.formatCurrency(1234.567)).toBe('$1,234.57');
+    expect(appModule.formatCurrency(-500)).toBe('-$500.00');
+  });
+});
+
+describe('12. Auto-Save State & Scenario Modal Interaction Tests', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('should auto-save current inputs to localStorage on change', () => {
+    const elHomePrice = document.getElementById('home-price');
+    elHomePrice.value = 525000;
+    elHomePrice.dispatchEvent(new Event('input'));
+
+    const savedRaw = localStorage.getItem(appModule.STORAGE_KEYS.CURRENT_STATE);
+    expect(savedRaw).not.toBeNull();
+    const state = JSON.parse(savedRaw);
+    expect(state.homePrice).toBe(525000);
+  });
+
+  it('should restore current state from localStorage upon calling restoreCurrentState()', () => {
+    const mockState = {
+      homePrice: 750000,
+      downPayment: 150000,
+      downPaymentPercent: 20,
+      closingCosts: 22500,
+      interestRate: 5.5,
+      loanTerm: 15,
+      propertyTax: 1.2,
+      homeInsurance: 0.6,
+      extraMonthly: 500,
+      takeHomeSalary: 10000,
+      monthlyExpenses: 2500
+    };
+    localStorage.setItem(appModule.STORAGE_KEYS.CURRENT_STATE, JSON.stringify(mockState));
+
+    appModule.restoreCurrentState();
+
+    expect(document.getElementById('home-price').value).toBe('750000');
+    expect(document.getElementById('loan-term').value).toBe('15');
+    expect(document.getElementById('extra-monthly').value).toBe('500');
+  });
+
+  it('should open save scenario modal with incremented default name and close on cancel click', () => {
+    const btnSaveScenario = document.getElementById('btn-save-scenario');
+    const modalSave = document.getElementById('modal-save-scenario');
+    const inputName = document.getElementById('scenario-name-input');
+    const btnCancel = document.getElementById('btn-cancel-modal');
+
+    if (btnSaveScenario && modalSave) {
+      btnSaveScenario.dispatchEvent(new Event('click'));
+      expect(modalSave.style.display).toBe('flex');
+      expect(inputName.value).toBe('Scenario 1');
+
+      btnCancel.dispatchEvent(new Event('click'));
+      expect(modalSave.style.display).toBe('none');
+    }
+  });
+
+  it('should handle confirm scenario delete dialog when confirmed', () => {
+    const scen = appModule.saveScenario('ToDelete');
+    const elScenarioSelect = document.getElementById('scenario-select');
+    elScenarioSelect.value = scen.id;
+    elScenarioSelect.dispatchEvent(new Event('change'));
+
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    const btnDelete = document.getElementById('btn-delete-scenario');
+    btnDelete.dispatchEvent(new Event('click'));
+
+    expect(appModule.getSavedScenarios().length).toBe(0);
+    confirmSpy.mockRestore();
+  });
+});
+
+describe('13. Glossary System Edge Cases & Keyboard Navigation', () => {
+  it('should show empty message when search query yields zero matching terms', () => {
+    appModule.renderGlossaryCards('all', 'nonexistenttermxyz999');
+    const container = document.getElementById('modal-glossary-cards-container');
+    expect(container.textContent).toContain('No matching financial terms found');
+  });
+
+  it('should close Help modal when Escape key is pressed', () => {
+    appModule.openHelpModal();
+    const modal = document.getElementById('modal-help');
+    expect(modal.style.display).toBe('flex');
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(modal.style.display).toBe('none');
+  });
+
+  it('should filter terms when clicking category pills in main page container', () => {
+    const mainPills = document.getElementById('glossary-category-pills');
+    if (mainPills) {
+      const armPill = mainPills.querySelector('[data-category="arm"]');
+      if (armPill) {
+        armPill.dispatchEvent(new Event('click', { bubbles: true }));
+        const container = document.getElementById('glossary-cards-container');
+        const cards = container.querySelectorAll('.glossary-card');
+        expect(cards.length).toBe(4);
+      }
+    }
   });
 });
 

@@ -1416,7 +1416,12 @@ function linkSliderAndInput(inputEl, sliderEl, callback) {
   });
 }
 
+let eventHandlersInitialized = false;
+
 function setupEventHandlers() {
+  if (eventHandlersInitialized) return;
+  eventHandlersInitialized = true;
+
   // ARM Sliders Sync
   if (elArmFixedTerm && elArmFixedTermSlider) {
     linkSliderAndInput(elArmFixedTerm, elArmFixedTermSlider);
