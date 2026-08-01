@@ -14,6 +14,9 @@ let activeTableViewMode = 'annual'; // 'annual' or 'monthly'
 let currentTablePage = 1;
 const rowsPerPage = 12; // 1 year of months per page for monthly view
 let activeZoomPreset = 'full'; // '5Y', '10Y', '15Y', or 'full'
+let scheduledOneTimePayments = [
+  { id: 'default-1', amount: 5000, month: 12 }
+];
 
 // DOM Element Selections
 const elHomePrice = document.getElementById('home-price');
@@ -168,6 +171,32 @@ function calculateMonthlyPayment(principal, annualRate, termYears) {
 }
 
 /**
+ * Helper to sum one-time extra payments for a specific month.
+ * Supports both array of payments [{ amount, month }] and single (oneTimeExtra, oneTimeMonth).
+ */
+function getLumpSumForMonth(oneTimeExtra, oneTimeMonth, month) {
+  if (Array.isArray(oneTimeExtra)) {
+    return oneTimeExtra
+      .filter(item => parseInt(item.month) === month)
+      .reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+  }
+  if (typeof oneTimeExtra === 'number' && oneTimeExtra > 0) {
+    return month === oneTimeMonth ? oneTimeExtra : 0;
+  }
+  return 0;
+}
+
+/**
+ * Helper to calculate total sum of all one-time extra payments.
+ */
+function getTotalLumpSumAmount(oneTimeExtra) {
+  if (Array.isArray(oneTimeExtra)) {
+    return oneTimeExtra.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+  }
+  return parseFloat(oneTimeExtra) || 0;
+}
+
+/**
  * Generates both standard and accelerated amortization schedules.
  * Supports both fixed-rate loans and ARM (Adjustable-Rate Mortgages).
  */
@@ -264,10 +293,7 @@ function calculateAmortizationSchedules(
     if (basePrincipalPaid < 0) basePrincipalPaid = 0;
 
     // Determine extra payment
-    let appliedExtra = extraMonthly;
-    if (m === oneTimeMonth) {
-      appliedExtra += oneTimeExtra;
-    }
+    let appliedExtra = extraMonthly + getLumpSumForMonth(oneTimeExtra, oneTimeMonth, m);
 
     // Capping extra payments if balance is paid off early
     let remainingAfterBase = accBalance - basePrincipalPaid;
@@ -307,8 +333,10 @@ function calculateAmortizationSchedules(
   let savingsMonthlyAllocated = 0;
   let savingsLumpSumAllocated = 0;
 
+  const hasLumpSum = getTotalLumpSumAmount(oneTimeExtra) > 0;
+
   if (interestSaved > 0) {
-    if (extraMonthly > 0 && oneTimeExtra > 0) {
+    if (extraMonthly > 0 && hasLumpSum) {
       const interestWithMonthlyOnly = simulateTotalInterest(principal, annualRate, termYears, extraMonthly, 0, oneTimeMonth, isArm, armFixedYears, armAdjustedRate);
       const interestWithLumpOnly = simulateTotalInterest(principal, annualRate, termYears, 0, oneTimeExtra, oneTimeMonth, isArm, armFixedYears, armAdjustedRate);
       
@@ -326,7 +354,7 @@ function calculateAmortizationSchedules(
     } else if (extraMonthly > 0) {
       savingsMonthlyAllocated = interestSaved;
       savingsLumpSumAllocated = 0;
-    } else if (oneTimeExtra > 0) {
+    } else if (hasLumpSum) {
       savingsMonthlyAllocated = 0;
       savingsLumpSumAllocated = interestSaved;
     }
@@ -400,7 +428,7 @@ function simulateTotalInterest(principal, initialRate, termYears, extraMonthly =
     }
     if (basePrincipalPaid < 0) basePrincipalPaid = 0;
 
-    let appliedExtra = extraMonthly + (m === oneTimeMonth ? oneTimeExtra : 0);
+    let appliedExtra = extraMonthly + getLumpSumForMonth(oneTimeExtra, oneTimeMonth, m);
     let remainingAfterBase = balance - basePrincipalPaid;
     if (appliedExtra > remainingAfterBase) appliedExtra = remainingAfterBase;
 
@@ -715,7 +743,14 @@ function updateUI() {
 
   // Update Accordion Summary Badges & Mobile Floating Summary Bar
   updateAccordionSummaries();
-  updateMobileSummaryBar(totalMonthlyPITIWithExtra, termStr, netCashFlow);
+  updateMobileSummaryBar(
+    totalMonthlyPITIWithExtra,
+    termStr,
+    netCashFlow,
+    summary.acceleratedTotalInterest,
+    summary.interestSaved,
+    extraMonthlyVal
+  );
 
   // Re-render chart and table
   renderChart();
@@ -1332,8 +1367,9 @@ function serializeCurrentState() {
     interestRate: parseFloat(elInterestRate.value) || 0,
     loanTerm: parseFloat(elLoanTerm.value) || 30,
     extraMonthly: parseFloat(elExtraMonthly.value) || 0,
-    oneTimeExtra: parseFloat(elOneTimeExtra.value) || 0,
-    oneTimeMonth: parseInt(elOneTimeMonth.value) || 1,
+    scheduledOneTimePayments: scheduledOneTimePayments,
+    oneTimeExtra: getTotalLumpSumAmount(scheduledOneTimePayments),
+    oneTimeMonth: scheduledOneTimePayments.length > 0 ? scheduledOneTimePayments[0].month : 12,
     propertyTax: parseFloat(elPropertyTax.value) || 0,
     homeInsurance: parseFloat(elHomeInsurance.value) || 0,
     takeHomeSalary: parseFloat(elTakeHomeSalary.value) || 0,
@@ -1387,8 +1423,18 @@ function applyStateObject(state) {
     elExtraMonthly.value = state.extraMonthly;
     elExtraMonthlySlider.value = state.extraMonthly;
   }
-  if (state.oneTimeExtra !== undefined) elOneTimeExtra.value = state.oneTimeExtra;
-  if (state.oneTimeMonth !== undefined) elOneTimeMonth.value = state.oneTimeMonth;
+  if (state.scheduledOneTimePayments && Array.isArray(state.scheduledOneTimePayments)) {
+    scheduledOneTimePayments = state.scheduledOneTimePayments.map(p => ({
+      id: p.id || (Date.now() + Math.random()).toString(),
+      amount: parseFloat(p.amount) || 0,
+      month: parseInt(p.month) || 12
+    }));
+  } else if (state.oneTimeExtra !== undefined) {
+    const amt = parseFloat(state.oneTimeExtra) || 0;
+    const mo = parseInt(state.oneTimeMonth) || 12;
+    scheduledOneTimePayments = amt > 0 ? [{ id: 'default-1', amount: amt, month: mo }] : [];
+  }
+  renderOneTimePaymentsList();
   if (state.propertyTax !== undefined) {
     elPropertyTax.value = state.propertyTax;
     elPropertyTaxSlider.value = state.propertyTax;
@@ -1582,8 +1628,10 @@ function recalculate() {
   const interestRate = parseFloat(elInterestRate.value) || 0;
   const termYears = parseFloat(elLoanTerm.value) || 30;
   const extraMonthly = parseFloat(elExtraMonthly.value) || 0;
-  const oneTimeExtra = parseFloat(elOneTimeExtra.value) || 0;
-  const oneTimeMonth = parseInt(elOneTimeMonth.value) || 1;
+  const oneTimeExtra = (scheduledOneTimePayments && scheduledOneTimePayments.length > 0)
+    ? scheduledOneTimePayments
+    : (parseFloat(elOneTimeExtra ? elOneTimeExtra.value : 0) || 0);
+  const oneTimeMonth = 12;
 
   const isArm = isArmLoan || activeLoanPreset.endsWith('-arm');
   const armFixedYears = parseFloat(elArmFixedTerm ? elArmFixedTerm.value : 5) || 5;
@@ -1853,8 +1901,8 @@ function setupEventHandlers() {
   linkSliderAndInput(elMonthlyExpenses, elExpensesSlider);
 
   // 6. One-Time payments triggers
-  elOneTimeExtra.addEventListener('input', recalculate);
-  elOneTimeMonth.addEventListener('input', recalculate);
+  if (elOneTimeExtra) elOneTimeExtra.addEventListener('input', recalculate);
+  if (elOneTimeMonth) elOneTimeMonth.addEventListener('input', recalculate);
 
 
 
@@ -2610,10 +2658,13 @@ function updateAccordionSummaries() {
   }
 }
 
-function updateMobileSummaryBar(monthlyPiti, termStr, netCashFlow) {
+function updateMobileSummaryBar(monthlyPiti, termStr, netCashFlow, interestPaid, interestSaved, extraMonthly) {
   const elMobilePiti = document.getElementById('mobile-kpi-piti');
   const elMobileTerm = document.getElementById('mobile-kpi-term');
   const elMobileCashflow = document.getElementById('mobile-kpi-cashflow');
+  const elMobileInterestPaid = document.getElementById('mobile-kpi-interest-paid');
+  const elMobileInterestSaved = document.getElementById('mobile-kpi-interest-saved');
+  const elMobileExtraMonthly = document.getElementById('mobile-kpi-extra-monthly');
 
   if (elMobilePiti) elMobilePiti.textContent = formatCurrency(monthlyPiti);
   if (elMobileTerm) elMobileTerm.textContent = termStr || '0 Mos';
@@ -2625,11 +2676,168 @@ function updateMobileSummaryBar(monthlyPiti, termStr, netCashFlow) {
       elMobileCashflow.className = 'mobile-metric-val danger';
     }
   }
+  if (elMobileInterestPaid) {
+    elMobileInterestPaid.textContent = formatCurrency(interestPaid || 0);
+    elMobileInterestPaid.className = 'mobile-metric-val warning';
+  }
+  if (elMobileInterestSaved) {
+    elMobileInterestSaved.textContent = formatCurrency(interestSaved || 0);
+    if ((interestSaved || 0) > 0) {
+      elMobileInterestSaved.className = 'mobile-metric-val success';
+    } else {
+      elMobileInterestSaved.className = 'mobile-metric-val';
+    }
+  }
+  if (elMobileExtraMonthly) {
+    const extraVal = extraMonthly || 0;
+    elMobileExtraMonthly.textContent = extraVal > 0 ? `+${formatCurrency(extraVal)}/mo` : '$0/mo';
+  }
 }
 
 // ==========================================================================
 // APPLICATION INITIALIZATION
 // ==========================================================================
+
+function renderOneTimePaymentsList() {
+  const listContainer = document.getElementById('onetime-payments-list');
+  const countBadge = document.getElementById('onetime-list-count');
+  const totalValEl = document.getElementById('modal-onetime-total-val');
+  const mainInputEl = document.getElementById('one-time-extra');
+
+  // Sort by month ascending
+  scheduledOneTimePayments.sort((a, b) => a.month - b.month);
+
+  const totalSum = getTotalLumpSumAmount(scheduledOneTimePayments);
+
+  if (mainInputEl) mainInputEl.value = totalSum;
+  if (totalValEl) totalValEl.textContent = formatCurrency(totalSum);
+  if (countBadge) {
+    countBadge.textContent = `${scheduledOneTimePayments.length} Payment${scheduledOneTimePayments.length === 1 ? '' : 's'}`;
+  }
+
+  if (!listContainer) return;
+
+  if (scheduledOneTimePayments.length === 0) {
+    listContainer.innerHTML = `
+      <div class="empty-onetime-state">
+        <i class="fa-solid fa-calendar-minus" style="font-size: 1.5rem; margin-bottom: 6px; display: block;"></i>
+        No one-time extra payments scheduled. Use the form above to add one!
+      </div>
+    `;
+    return;
+  }
+
+  listContainer.innerHTML = scheduledOneTimePayments.map(item => {
+    const yr = Math.floor((item.month - 1) / 12) + 1;
+    const moRem = ((item.month - 1) % 12) + 1;
+    const timeLabel = `Month ${item.month} (Yr ${yr}${moRem > 1 ? `, Mo ${moRem}` : ''})`;
+
+    return `
+      <div class="onetime-payment-row">
+        <div class="onetime-payment-info">
+          <span class="onetime-month-pill">${timeLabel}</span>
+          <strong class="onetime-amount-val">${formatCurrency(item.amount)}</strong>
+        </div>
+        <button type="button" class="btn-delete-onetime" data-id="${item.id}" title="Remove payment">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+let isOneTimePaymentsHandlersInitialized = false;
+
+function setupOneTimePaymentsHandlers() {
+  if (isOneTimePaymentsHandlersInitialized) return;
+  isOneTimePaymentsHandlersInitialized = true;
+
+  const btnManage = document.getElementById('btn-manage-onetime');
+  const inputDisplay = document.getElementById('one-time-extra');
+  const modal = document.getElementById('modal-onetime-payments');
+  const btnCloseX = document.getElementById('btn-x-close-onetime');
+  const btnClose = document.getElementById('btn-close-onetime-modal');
+  const btnAdd = document.getElementById('btn-add-onetime-item');
+  const inputAddAmount = document.getElementById('input-add-onetime-amount');
+  const inputAddMonth = document.getElementById('input-add-onetime-month');
+  const hintYear = document.getElementById('add-onetime-year-hint');
+  const listContainer = document.getElementById('onetime-payments-list');
+
+  const openModal = () => {
+    if (modal) {
+      modal.style.display = 'flex';
+      renderOneTimePaymentsList();
+    }
+  };
+
+  const closeModal = () => {
+    if (modal) modal.style.display = 'none';
+  };
+
+  if (btnManage) btnManage.addEventListener('click', openModal);
+  if (inputDisplay) inputDisplay.addEventListener('click', openModal);
+  if (btnCloseX) btnCloseX.addEventListener('click', closeModal);
+  if (btnClose) btnClose.addEventListener('click', closeModal);
+
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+  }
+
+  if (inputAddMonth && hintYear) {
+    const updateYearHint = () => {
+      const m = parseInt(inputAddMonth.value) || 1;
+      const yr = Math.floor((m - 1) / 12) + 1;
+      const moRem = ((m - 1) % 12) + 1;
+      hintYear.textContent = moRem === 12 ? `(Yr ${yr})` : `(Yr ${yr}, Mo ${moRem})`;
+    };
+    inputAddMonth.addEventListener('input', updateYearHint);
+    updateYearHint();
+  }
+
+  if (btnAdd) {
+    btnAdd.addEventListener('click', () => {
+      const amount = parseFloat(inputAddAmount ? inputAddAmount.value : 0) || 0;
+      const month = parseInt(inputAddMonth ? inputAddMonth.value : 1) || 1;
+
+      if (amount <= 0) return;
+
+      scheduledOneTimePayments.push({
+        id: Date.now().toString() + Math.random().toString().slice(2, 6),
+        amount: amount,
+        month: month
+      });
+
+      scheduledOneTimePayments.sort((a, b) => a.month - b.month);
+
+      renderOneTimePaymentsList();
+      recalculate();
+    });
+  }
+
+  if (listContainer) {
+    listContainer.addEventListener('click', (e) => {
+      const btnDelete = e.target.closest('.btn-delete-onetime');
+      if (!btnDelete) return;
+
+      const idToDelete = btnDelete.getAttribute('data-id');
+      scheduledOneTimePayments = scheduledOneTimePayments.filter(p => p.id !== idToDelete);
+
+      renderOneTimePaymentsList();
+      recalculate();
+    });
+  }
+}
+
+function getScheduledOneTimePayments() {
+  return scheduledOneTimePayments;
+}
+
+function setScheduledOneTimePayments(payments) {
+  scheduledOneTimePayments = payments || [];
+  renderOneTimePaymentsList();
+}
 
 function init() {
   // Initialize theme setting from saved preference or OS default
@@ -2644,6 +2852,7 @@ function init() {
   setupEventHandlers();
   setupHelpHandlers();
   setupAccordionHandlers();
+  setupOneTimePaymentsHandlers();
 
   // Restore saved scenarios list and last active session state
   restoreCurrentState();
@@ -2691,5 +2900,9 @@ export {
   getActiveZoomPreset,
   setupAccordionHandlers,
   updateAccordionSummaries,
-  updateMobileSummaryBar
+  updateMobileSummaryBar,
+  setupOneTimePaymentsHandlers,
+  renderOneTimePaymentsList,
+  getScheduledOneTimePayments,
+  setScheduledOneTimePayments
 };
