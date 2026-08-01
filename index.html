@@ -398,22 +398,17 @@
                 <input type="range" id="extra-monthly-slider" min="0" max="2000" step="50" value="200" class="slider">
               </div>
 
-              <!-- One-Time Extra Payment -->
-              <div class="input-group-row">
-                <div class="input-group width-60">
-                  <label for="one-time-extra">One-Time Extra Payment <i class="fa-solid fa-circle-info info-icon"
-                      data-term="one-time-extra" title="Click for plain-English explanation" role="button"
-                      tabindex="0"></i></label>
-                  <div class="input-wrapper prefix">
-                    <span class="input-addon">$</span>
-                    <input type="number" id="one-time-extra" value="5000" min="0" max="500000" step="100">
-                  </div>
-                </div>
-                <div class="input-group width-40">
-                  <label for="one-time-month">At Month</label>
-                  <div class="input-wrapper">
-                    <input type="number" id="one-time-month" value="12" min="1" max="600" step="1">
-                  </div>
+              <!-- One-Time Extra Payments Total & Schedule Action -->
+              <div class="input-group mt-4">
+                <label for="one-time-extra">One-Time Extra Payments Total <i class="fa-solid fa-circle-info info-icon"
+                    data-term="one-time-extra" title="Click for plain-English explanation" role="button"
+                    tabindex="0"></i></label>
+                <div class="input-wrapper prefix suffix">
+                  <span class="input-addon">$</span>
+                  <input type="number" id="one-time-extra" value="5000" readonly title="Sum of all scheduled one-time payments" style="background: rgba(255, 255, 255, 0.04); cursor: pointer;">
+                  <button type="button" id="btn-manage-onetime" class="btn btn-xs btn-outline btn-manage-onetime" title="Manage Scheduled One-Time Extra Payments">
+                    <i class="fa-solid fa-pen-to-square"></i> Edit Schedule
+                  </button>
                 </div>
               </div>
             </div>
@@ -854,6 +849,61 @@
     </div>
   </div>
 
+  <!-- Modal 4: Manage One-Time Extra Payments -->
+  <div id="modal-onetime-payments" class="modal-backdrop" style="display: none;">
+    <div class="modal-card modal-card-md">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-calendar-plus"></i> Schedule One-Time Extra Payments</h3>
+        <button type="button" id="btn-x-close-onetime" class="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-description mb-3">Add additional lump-sum extra payments at specific months to see how early lump sums compound interest savings over time.</p>
+
+        <!-- Form to Add a New Payment -->
+        <div class="onetime-add-card mb-4">
+          <h4 class="add-card-title"><i class="fa-solid fa-plus-circle"></i> Add Scheduled Payment</h4>
+          <div class="input-group-row">
+            <div class="input-group width-50">
+              <label for="input-add-onetime-amount">Payment Amount ($)</label>
+              <div class="input-wrapper prefix">
+                <span class="input-addon">$</span>
+                <input type="number" id="input-add-onetime-amount" value="5000" min="1" max="1000000" step="500" placeholder="e.g. 5000">
+              </div>
+            </div>
+            <div class="input-group width-50">
+              <label for="input-add-onetime-month">At Month # <span id="add-onetime-year-hint" class="text-muted">(Yr 1)</span></label>
+              <div class="input-wrapper suffix">
+                <input type="number" id="input-add-onetime-month" value="12" min="1" max="600" step="1" placeholder="e.g. 12">
+                <span class="input-addon">Mo</span>
+              </div>
+            </div>
+          </div>
+          <button type="button" id="btn-add-onetime-item" class="btn btn-sm btn-primary mt-2">
+            <i class="fa-solid fa-plus"></i> Add Scheduled Payment
+          </button>
+        </div>
+
+        <!-- List of Scheduled One-Time Payments -->
+        <div class="onetime-list-section">
+          <div class="onetime-list-header">
+            <h4>Scheduled One-Time Payments</h4>
+            <span class="badge badge-info" id="onetime-list-count">1 Payment</span>
+          </div>
+          <div class="onetime-payments-list" id="onetime-payments-list">
+            <!-- Dynamically rendered rows -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer justify-between">
+        <div class="onetime-total-display">
+          <span>Total Scheduled Lump Sums:</span>
+          <strong id="modal-onetime-total-val" class="color-success">$5,000</strong>
+        </div>
+        <button type="button" id="btn-close-onetime-modal" class="btn btn-sm btn-primary">Done</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Help & Glossary Modal Dialog -->
   <div id="modal-help" class="modal-backdrop" style="display: none;">
     <div class="modal-card modal-card-lg">
@@ -891,8 +941,20 @@
   <div class="mobile-summary-bar" id="mobile-summary-bar">
     <div class="mobile-summary-content">
       <div class="mobile-summary-metric">
-        <span class="mobile-metric-label">PITI</span>
+        <span class="mobile-metric-label">Monthly Payment</span>
         <strong class="mobile-metric-val" id="mobile-kpi-piti">$0/mo</strong>
+      </div>
+      <div class="mobile-summary-metric">
+        <span class="mobile-metric-label">Extra Payment</span>
+        <strong class="mobile-metric-val" id="mobile-kpi-extra-monthly">$0/mo</strong>
+      </div>
+      <div class="mobile-summary-metric">
+        <span class="mobile-metric-label">Interest Paid</span>
+        <strong class="mobile-metric-val warning" id="mobile-kpi-interest-paid">$0</strong>
+      </div>
+      <div class="mobile-summary-metric">
+        <span class="mobile-metric-label">Interest Saved</span>
+        <strong class="mobile-metric-val success" id="mobile-kpi-interest-saved">$0</strong>
       </div>
       <div class="mobile-summary-metric">
         <span class="mobile-metric-label">Payoff</span>
@@ -903,9 +965,6 @@
         <strong class="mobile-metric-val" id="mobile-kpi-cashflow">$0/mo</strong>
       </div>
     </div>
-    <button type="button" class="btn btn-xs btn-primary mobile-jump-btn" id="btn-mobile-jump-chart">
-      <i class="fa-solid fa-chart-line"></i> Chart
-    </button>
   </div>
 
   <!-- Application Logic -->

@@ -2760,7 +2760,7 @@ input[type=number] {
 .mobile-summary-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   position: fixed;
   bottom: 16px;
   left: 50%;
@@ -2786,13 +2786,17 @@ input[type=number] {
 .mobile-summary-content {
   display: flex;
   align-items: center;
-  gap: 24px;
+  justify-content: center;
+  gap: 32px;
+  width: 100%;
   overflow-x: auto;
 }
 
 .mobile-summary-metric {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
   gap: 2px;
 }
 
@@ -2817,6 +2821,10 @@ input[type=number] {
 
 .mobile-metric-val.danger {
   color: var(--danger);
+}
+
+.mobile-metric-val.warning {
+  color: var(--warning);
 }
 
 .mobile-jump-btn {
@@ -2856,5 +2864,149 @@ body {
     padding: 5px 12px;
     font-size: 0.72rem;
   }
+}
+
+/* ==========================================================================
+   One-Time Payment Schedule Modal & Input Styles
+   ========================================================================== */
+.mt-4 {
+  margin-top: 1.5rem !important;
+}
+
+#accordion-payoff-body .input-group.mt-4 {
+  margin-top: 1.75rem !important;
+}
+
+.btn-manage-onetime {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 6px;
+  white-space: nowrap;
+  gap: 6px;
+  align-items: center;
+  display: inline-flex;
+}
+
+.onetime-add-card {
+  background: var(--bg-card-alt, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.add-card-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.onetime-list-section {
+  margin-top: 16px;
+}
+
+.onetime-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.onetime-list-header h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.onetime-payments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.onetime-payment-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+.onetime-payment-row:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.onetime-payment-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.onetime-month-pill {
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--primary-color);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.onetime-amount-val {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--success);
+}
+
+.btn-delete-onetime {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-delete-onetime:hover {
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.onetime-total-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.onetime-total-display strong {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--success);
+}
+
+.empty-onetime-state {
+  text-align: center;
+  padding: 24px 16px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed var(--border-color);
+  border-radius: 10px;
 }
 

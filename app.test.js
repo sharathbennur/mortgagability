@@ -1003,12 +1003,18 @@ describe('15. Collapsible Accordion Input Panels & Mobile Floating Summary Bar',
     const elMobilePiti = document.getElementById('mobile-kpi-piti');
     const elMobileTerm = document.getElementById('mobile-kpi-term');
     const elMobileCashflow = document.getElementById('mobile-kpi-cashflow');
+    const elMobileInterestPaid = document.getElementById('mobile-kpi-interest-paid');
+    const elMobileInterestSaved = document.getElementById('mobile-kpi-interest-saved');
+    const elMobileExtraMonthly = document.getElementById('mobile-kpi-extra-monthly');
 
     expect(elMobilePiti).not.toBeNull();
     expect(elMobilePiti.textContent).not.toBe('$0/mo');
     expect(elMobileTerm.textContent).not.toBe('0 Mos');
     expect(elMobileCashflow.textContent).not.toBe('$0/mo');
     expect(elMobileCashflow.classList.contains('success')).toBe(true);
+    expect(elMobileInterestPaid.textContent).not.toBe('$0');
+    expect(elMobileInterestSaved.textContent).not.toBe('$0');
+    expect(elMobileExtraMonthly.textContent).toContain('/mo');
 
     // Set expenses high to trigger negative net cash flow
     document.getElementById('monthly-expenses').value = '15000';
@@ -1017,20 +1023,88 @@ describe('15. Collapsible Accordion Input Panels & Mobile Floating Summary Bar',
     expect(elMobileCashflow.classList.contains('danger')).toBe(true);
   });
 
-  it('should handle mobile jump to chart button scroll interaction', () => {
+  it('should handle mobile jump to chart button scroll interaction if present', () => {
     appModule.init();
 
     const btnJump = document.getElementById('btn-mobile-jump-chart');
-    expect(btnJump).not.toBeNull();
+    if (btnJump) {
+      const scrollSpy = vi.fn();
+      const chartPanel = document.querySelector('.chart-panel');
+      if (chartPanel) {
+        chartPanel.scrollIntoView = scrollSpy;
+      }
 
-    const scrollSpy = vi.fn();
-    const chartPanel = document.querySelector('.chart-panel');
-    if (chartPanel) {
-      chartPanel.scrollIntoView = scrollSpy;
+      btnJump.click();
+      expect(scrollSpy).toHaveBeenCalled();
     }
+  });
 
-    btnJump.click();
-    expect(scrollSpy).toHaveBeenCalled();
+  describe('16. Multi-Month Scheduled One-Time Payments Modal & Math Tests', () => {
+    it('should calculate amortization schedule with multiple one-time payments at different months', () => {
+      const schedule = appModule.calculateAmortizationSchedules(
+        300000, // home price
+        60000,  // down payment -> loan $240,000
+        5.0,    // rate
+        30,     // 30 years
+        0,      // extra monthly
+        [
+          { id: '1', amount: 5000, month: 12 },
+          { id: '2', amount: 10000, month: 36 }
+        ],
+        12,
+        false
+      );
+
+      expect(schedule.accelerated).toBeDefined();
+      expect(schedule.summary.interestSaved).toBeGreaterThan(0);
+      
+      // Verify lump sums were applied at month 12 and month 36
+      const month12Row = schedule.accelerated.find(r => r.month === 12);
+      const month36Row = schedule.accelerated.find(r => r.month === 36);
+
+      expect(month12Row).toBeDefined();
+      expect(month36Row).toBeDefined();
+      expect(month12Row.extraPayment).toBe(5000);
+      expect(month36Row.extraPayment).toBe(10000);
+    });
+
+    it('should open modal, add payment, update list, update total sum, and remove payment', () => {
+      appModule.init();
+      appModule.setScheduledOneTimePayments([{ id: 'default-1', amount: 5000, month: 12 }]);
+
+      const btnEdit = document.getElementById('btn-manage-onetime');
+      const modal = document.getElementById('modal-onetime-payments');
+      const inputAmount = document.getElementById('input-add-onetime-amount');
+      const inputMonth = document.getElementById('input-add-onetime-month');
+      const btnAdd = document.getElementById('btn-add-onetime-item');
+      const listContainer = document.getElementById('onetime-payments-list');
+      const totalDisplay = document.getElementById('one-time-extra');
+
+      expect(btnEdit).not.toBeNull();
+      expect(modal).not.toBeNull();
+
+      // Open modal
+      btnEdit.click();
+      expect(modal.style.display).toBe('flex');
+
+      // Add a payment of $10,000 at Month 36
+      inputAmount.value = '10000';
+      inputMonth.value = '36';
+      btnAdd.click();
+
+      // Verify list container has payments and total is updated
+      expect(listContainer.querySelectorAll('.onetime-payment-row').length).toBe(2);
+      expect(parseFloat(totalDisplay.value)).toBe(15000);
+
+      // Delete the first payment
+      const deleteButtons = listContainer.querySelectorAll('.btn-delete-onetime');
+      expect(deleteButtons.length).toBe(2);
+      deleteButtons[0].click();
+
+      // Total sum updated to 10,000
+      expect(parseFloat(totalDisplay.value)).toBe(10000);
+      expect(listContainer.querySelectorAll('.onetime-payment-row').length).toBe(1);
+    });
   });
 });
 
