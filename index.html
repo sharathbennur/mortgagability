@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 
 <head>
   <meta charset="UTF-8">
@@ -23,7 +23,7 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 
-<body>
+<body class="simple-mode">
   <div class="app-container">
     <!-- Header -->
     <header class="app-header">
@@ -62,8 +62,12 @@
           </div>
         </div>
 
-        <!-- Top Navbar Utilities (Theme Toggle & Help/Glossary) -->
+        <!-- Top Navbar Utilities (Theme Toggle & Simple Mode & Help/Glossary) -->
         <div class="navbar-utility-actions">
+          <button type="button" id="btn-mode-toggle" class="btn btn-xs btn-outline btn-mode-toggle"
+            title="Toggle Simple / Advanced Mode" aria-label="Toggle Simple / Advanced Mode">
+            <i class="fa-solid fa-feather" id="mode-toggle-icon"></i> <span id="mode-toggle-text">Simple Mode</span>
+          </button>
           <button type="button" id="btn-theme-toggle" class="btn btn-xs btn-outline btn-theme-toggle"
             title="Toggle Light/Dark Theme" aria-label="Toggle Light/Dark Theme">
             <i class="fa-solid fa-moon" id="theme-toggle-icon"></i>
@@ -147,7 +151,7 @@
               </div>
 
               <!-- Closing Costs -->
-              <div class="form-field-group">
+              <div class="form-field-group" id="closing-costs-group">
                 <div class="input-group-row">
                   <div class="input-group width-65">
                     <label for="closing-costs">Est. Closing Costs <i class="fa-solid fa-circle-info info-icon"
@@ -676,13 +680,16 @@
           </div>
 
           <!-- Card 3: Total Interest Paid -->
-          <div class="kpi-card warning">
+          <div class="kpi-card warning" id="kpi-interest-paid-card">
             <div class="kpi-header">
               <span>Total Interest Paid <i class="fa-solid fa-circle-info info-icon" data-term="interest-paid"
                   title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
               <i class="fa-solid fa-percent"></i>
             </div>
             <div class="kpi-value" id="kpi-interest-paid">$0.00</div>
+            <div class="kpi-simple-saved-badge" id="kpi-simple-saved-badge" style="display: none;">
+              <i class="fa-solid fa-piggy-bank"></i> Interest Saved: <strong id="kpi-simple-interest-saved">$0.00</strong>
+            </div>
             <div class="kpi-footer">
               <span>Standard Interest: </span>
               <strong id="kpi-standard-interest-paid">$0.00</strong>
@@ -725,7 +732,7 @@
           </div>
 
           <!-- Card 5: Time Saved -->
-          <div class="kpi-card primary">
+          <div class="kpi-card primary" id="kpi-time-saved-card">
             <div class="kpi-header">
               <span>Time Saved <i class="fa-solid fa-circle-info info-icon" data-term="time-saved"
                   title="Click for plain-English explanation" role="button" tabindex="0"></i></span>

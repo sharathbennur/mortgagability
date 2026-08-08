@@ -26,6 +26,7 @@ const COMPARE_SCENARIO_COLORS = [
 let scheduledOneTimePayments = [
   { id: 'default-1', amount: 5000, month: 12 }
 ];
+let isSimpleMode = false;
 
 // DOM Element Selections
 const elHomePrice = document.getElementById('home-price');
@@ -132,7 +133,8 @@ const elBtnXCloseDisclaimer = document.getElementById('btn-x-close-disclaimer');
 const STORAGE_KEYS = {
   SCENARIOS: 'mortgagability_scenarios',
   CURRENT_STATE: 'mortgagability_current_state',
-  THEME: 'mortgagability_theme'
+  THEME: 'mortgagability_theme',
+  MODE: 'mortgagability_simple_mode'
 };
 
 let currentScenarioId = null;
@@ -791,6 +793,11 @@ function updateUI() {
   elKpiInterestPaid.textContent = formatCurrency(summary.acceleratedTotalInterest);
   elKpiStandardInterestPaid.textContent = formatCurrency(summary.standardTotalInterest);
 
+  const elKpiSimpleInterestSaved = document.getElementById('kpi-simple-interest-saved');
+  if (elKpiSimpleInterestSaved) {
+    elKpiSimpleInterestSaved.textContent = formatCurrency(summary.interestSaved);
+  }
+
   const savingsRate = summary.standardTotalInterest > 0
     ? (summary.interestSaved / summary.standardTotalInterest) * 100
     : 0;
@@ -1052,7 +1059,7 @@ function getInitialTheme() {
   } catch (e) {
     // Ignore browser storage/media query access errors
   }
-  return 'dark';
+  return 'light';
 }
 
 function setTheme(theme) {
@@ -1096,6 +1103,64 @@ function toggleTheme() {
     : 'dark';
   const newTheme = activeTheme === 'light' ? 'dark' : 'light';
   setTheme(newTheme);
+}
+
+function setSimpleMode(enabled) {
+  isSimpleMode = !!enabled;
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.MODE, isSimpleMode ? 'true' : 'false');
+    }
+  } catch (e) {
+    // Ignore storage restriction errors
+  }
+
+  if (typeof document !== 'undefined') {
+    if (document.body) {
+      document.body.classList.toggle('simple-mode', isSimpleMode);
+    }
+
+    const elBtnModeToggle = document.getElementById('btn-mode-toggle');
+    const elModeToggleIcon = document.getElementById('mode-toggle-icon');
+    const elModeToggleText = document.getElementById('mode-toggle-text');
+
+    if (elBtnModeToggle) {
+      if (isSimpleMode) {
+        elBtnModeToggle.classList.add('active-simple-mode');
+        if (elModeToggleIcon) elModeToggleIcon.className = 'fa-solid fa-sliders';
+        if (elModeToggleText) elModeToggleText.textContent = 'Advanced Mode';
+        elBtnModeToggle.setAttribute('title', 'Switch to Advanced Mode');
+        elBtnModeToggle.setAttribute('aria-label', 'Switch to Advanced Mode');
+
+        // Reset Monthly Payment card to Text view in Simple Mode
+        const btnText = document.getElementById('btn-piti-view-text');
+        if (btnText) btnText.click();
+      } else {
+        elBtnModeToggle.classList.remove('active-simple-mode');
+        if (elModeToggleIcon) elModeToggleIcon.className = 'fa-solid fa-feather';
+        if (elModeToggleText) elModeToggleText.textContent = 'Simple Mode';
+        elBtnModeToggle.setAttribute('title', 'Switch to Simple Mode');
+        elBtnModeToggle.setAttribute('aria-label', 'Switch to Simple Mode');
+      }
+    }
+  }
+}
+
+function toggleSimpleMode() {
+  setSimpleMode(!isSimpleMode);
+}
+
+function getInitialMode() {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem(STORAGE_KEYS.MODE);
+      if (saved === 'false') return false;
+      if (saved === 'true') return true;
+    }
+  } catch (e) {
+    // Fallback
+  }
+  return true;
 }
 
 /**
@@ -2692,6 +2757,11 @@ function setupEventHandlers() {
     elBtnThemeToggle.addEventListener('click', toggleTheme);
   }
 
+  const elBtnModeToggle = document.getElementById('btn-mode-toggle');
+  if (elBtnModeToggle) {
+    elBtnModeToggle.addEventListener('click', toggleSimpleMode);
+  }
+
   setupPitiViewToggle();
   setupSavingsChipHandlers();
 }
@@ -3447,8 +3517,9 @@ function setScheduledOneTimePayments(payments) {
 }
 
 function init() {
-  // Initialize theme setting from saved preference or OS default
+  // Initialize theme and simple mode settings from saved preference or defaults
   setTheme(getInitialTheme());
+  setSimpleMode(getInitialMode());
 
   // Set up range limits dynamic maxes
   const initialPrice = parseFloat(elHomePrice.value) || 450000;
@@ -3497,6 +3568,9 @@ export {
   getInitialTheme,
   setTheme,
   toggleTheme,
+  getInitialMode,
+  setSimpleMode,
+  toggleSimpleMode,
   STORAGE_KEYS,
   GLOSSARY_TERMS,
   renderGlossaryCards,

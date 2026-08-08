@@ -452,7 +452,7 @@ describe('5. Terms & Privacy Disclaimer Tests', () => {
 
   it('should contain accurate privacy statements confirming zero data transmission to site creators', () => {
     const elModalDisclaimer = document.getElementById('modal-disclaimer');
-    const text = elModalDisclaimer.textContent;
+    const text = elModalDisclaimer.textContent.replace(/\s+/g, ' ');
     expect(text).toContain('No personal data, financial parameters, budgets, scenario names, or notes are transmitted to, collected by, or shared with the site\'s creators');
     expect(text).toContain('localStorage');
   });
@@ -487,9 +487,12 @@ describe('6. Theme Switcher & Persistence Tests', () => {
     }
   });
 
-  it('should retrieve saved theme from localStorage on getInitialTheme', () => {
-    localStorage.setItem(appModule.STORAGE_KEYS.THEME, 'light');
+  it('should retrieve saved theme from localStorage on getInitialTheme or default to light', () => {
+    localStorage.clear();
     expect(appModule.getInitialTheme()).toBe('light');
+
+    localStorage.setItem(appModule.STORAGE_KEYS.THEME, 'dark');
+    expect(appModule.getInitialTheme()).toBe('dark');
   });
 });
 
@@ -1426,11 +1429,12 @@ describe('15. Collapsible Accordion Input Panels & Mobile Floating Summary Bar',
     it('should handle top navbar theme toggle button click', () => {
       const btnThemeToggle = document.getElementById('btn-theme-toggle');
       if (btnThemeToggle) {
+        appModule.setTheme('light');
         btnThemeToggle.click();
         const currentTheme = document.documentElement.getAttribute('data-theme');
-        expect(currentTheme).toBe('light');
+        expect(currentTheme).toBe('dark');
         btnThemeToggle.click();
-        expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+        expect(document.documentElement.getAttribute('data-theme')).toBe('light');
       }
     });
   });
@@ -1486,7 +1490,75 @@ describe('15. Collapsible Accordion Input Panels & Mobile Floating Summary Bar',
       }
     });
   });
+
+  describe('22. Simple Mode Top Navbar Button & State Tests', () => {
+    beforeEach(() => {
+      localStorage.clear();
+      appModule.setSimpleMode(false);
+    });
+
+    it('should set data/class on body and update localStorage when setSimpleMode is called', () => {
+      appModule.setSimpleMode(true);
+      expect(document.body.classList.contains('simple-mode')).toBe(true);
+      expect(localStorage.getItem(appModule.STORAGE_KEYS.MODE)).toBe('true');
+
+      appModule.setSimpleMode(false);
+      expect(document.body.classList.contains('simple-mode')).toBe(false);
+      expect(localStorage.getItem(appModule.STORAGE_KEYS.MODE)).toBe('false');
+    });
+
+    it('should toggle Simple Mode and update navbar button text/icon when navbar button is clicked', () => {
+      const btnModeToggle = document.getElementById('btn-mode-toggle');
+      const textModeToggle = document.getElementById('mode-toggle-text');
+      const iconModeToggle = document.getElementById('mode-toggle-icon');
+
+      expect(btnModeToggle).not.toBeNull();
+      expect(document.body.classList.contains('simple-mode')).toBe(false);
+      expect(textModeToggle.textContent).toBe('Simple Mode');
+
+      // Click button -> toggle to Simple Mode
+      btnModeToggle.click();
+      expect(document.body.classList.contains('simple-mode')).toBe(true);
+      expect(textModeToggle.textContent).toBe('Advanced Mode');
+      expect(iconModeToggle.className).toContain('fa-sliders');
+      expect(localStorage.getItem(appModule.STORAGE_KEYS.MODE)).toBe('true');
+
+      // Click button again -> switch back to Advanced Mode
+      btnModeToggle.click();
+      expect(document.body.classList.contains('simple-mode')).toBe(false);
+      expect(textModeToggle.textContent).toBe('Simple Mode');
+      expect(iconModeToggle.className).toContain('fa-feather');
+      expect(localStorage.getItem(appModule.STORAGE_KEYS.MODE)).toBe('false');
+    });
+
+    it('should retrieve saved simple mode state from localStorage on getInitialMode or default to true', () => {
+      localStorage.clear();
+      expect(appModule.getInitialMode()).toBe(true);
+
+      localStorage.setItem(appModule.STORAGE_KEYS.MODE, 'false');
+      expect(appModule.getInitialMode()).toBe(false);
+
+      localStorage.setItem(appModule.STORAGE_KEYS.MODE, 'true');
+      expect(appModule.getInitialMode()).toBe(true);
+    });
+
+    it('should maintain accurate calculation integrity in Simple Mode', () => {
+      appModule.setSimpleMode(true);
+      appModule.recalculate();
+
+      const elPiti = document.getElementById('kpi-standard-payment');
+      const elInterestPaid = document.getElementById('kpi-interest-paid');
+      const elInterestSaved = document.getElementById('kpi-interest-saved');
+      const elTimeSaved = document.getElementById('kpi-time-saved');
+
+      expect(elPiti.textContent).toContain('$2,800.44');
+      expect(elInterestPaid.textContent).not.toBe('$0.00');
+      expect(elInterestSaved.textContent).toBeDefined();
+      expect(elTimeSaved.textContent).toBeDefined();
+    });
+  });
 });
+
 
 
 
