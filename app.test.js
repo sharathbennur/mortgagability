@@ -1434,6 +1434,58 @@ describe('15. Collapsible Accordion Input Panels & Mobile Floating Summary Bar',
       }
     });
   });
+
+  describe('21. Accelerate Payoff Reset Button Tests', () => {
+    it('should reset extra monthly payment, scheduled one-time payments, and recast parameters to 0 when reset payoff button is clicked', () => {
+      appModule.init();
+
+      // Populate extra monthly payment
+      const elExtraMonthly = document.getElementById('extra-monthly');
+      const elExtraMonthlySlider = document.getElementById('extra-monthly-slider');
+      elExtraMonthly.value = '500';
+      elExtraMonthlySlider.value = '500';
+
+      // Populate scheduled one-time payments
+      appModule.setScheduledOneTimePayments([
+        { id: 'item-1', amount: 10000, month: 12 },
+        { id: 'item-2', amount: 5000, month: 24 }
+      ]);
+      const elOneTimeExtra = document.getElementById('one-time-extra');
+      if (elOneTimeExtra) elOneTimeExtra.value = '15000';
+
+      // Populate recast settings
+      const elEnableRecast = document.getElementById('enable-recast');
+      const elRecastAmount = document.getElementById('recast-amount');
+      const elRecastAmountSlider = document.getElementById('recast-amount-slider');
+      if (elEnableRecast) elEnableRecast.checked = true;
+      if (elRecastAmount) elRecastAmount.value = '50000';
+      if (elRecastAmountSlider) elRecastAmountSlider.value = '50000';
+
+      appModule.recalculate();
+      expect(elExtraMonthly.value).toBe('500');
+      expect(appModule.getScheduledOneTimePayments().length).toBe(2);
+
+      // Click Reset Payoff Button
+      const btnResetPayoff = document.getElementById('btn-reset-payoff');
+      expect(btnResetPayoff).not.toBeNull();
+      btnResetPayoff.click();
+
+      // Assert all numbers in payoff panel are reset to 0
+      expect(elExtraMonthly.value).toBe('0');
+      expect(elExtraMonthlySlider.value).toBe('0');
+      expect(appModule.getScheduledOneTimePayments().length).toBe(0);
+      if (elOneTimeExtra) expect(elOneTimeExtra.value).toBe('0');
+      if (elEnableRecast) expect(elEnableRecast.checked).toBe(false);
+      if (elRecastAmount) expect(elRecastAmount.value).toBe('0');
+      if (elRecastAmountSlider) expect(elRecastAmountSlider.value).toBe(elRecastAmountSlider.min || '0');
+
+      // Verify accordion badge updated
+      const badgePayoff = document.getElementById('badge-summary-payoff');
+      if (badgePayoff) {
+        expect(badgePayoff.textContent).toBe('$0 Extra');
+      }
+    });
+  });
 });
 
 

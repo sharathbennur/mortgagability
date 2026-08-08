@@ -177,8 +177,7 @@
                       title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
                   <strong id="loan-amount-display">$360,000</strong>
                 </div>
-                <div class="badge-row"
-                  style="border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 8px;">
+                <div class="badge-row" style="border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 8px;">
                   <span>Total Upfront Cash: <i class="fa-solid fa-circle-info info-icon" data-term="upfront-cash"
                       title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
                   <strong id="total-cash-display" style="color: var(--success);">$103,500</strong>
@@ -259,7 +258,8 @@
                     <input type="range" id="property-tax-slider" min="0" max="5" step="0.05" value="0.9" class="slider">
                   </div>
                   <div class="width-50 slider-wrapper">
-                    <input type="range" id="home-insurance-slider" min="0" max="3" step="0.05" value="0.5" class="slider">
+                    <input type="range" id="home-insurance-slider" min="0" max="3" step="0.05" value="0.5"
+                      class="slider">
                   </div>
                 </div>
               </div>
@@ -380,7 +380,8 @@
                 </div>
                 <div class="input-group-row">
                   <div class="width-50 slider-wrapper">
-                    <input type="range" id="take-home-slider" min="0" max="25000" step="250" value="8000" class="slider">
+                    <input type="range" id="take-home-slider" min="0" max="25000" step="250" value="8000"
+                      class="slider">
                   </div>
                   <div class="width-50 slider-wrapper">
                     <input type="range" id="expenses-slider" min="0" max="20000" step="200" value="3000" class="slider">
@@ -427,8 +428,11 @@
                       tabindex="0"></i></label>
                   <div class="input-wrapper prefix suffix">
                     <span class="input-addon">$</span>
-                    <input type="number" id="one-time-extra" value="5000" readonly title="Sum of all scheduled one-time payments" style="background: rgba(255, 255, 255, 0.04); cursor: pointer;">
-                    <button type="button" id="btn-manage-onetime" class="btn btn-xs btn-outline btn-manage-onetime" title="Manage Scheduled One-Time Extra Payments">
+                    <input type="number" id="one-time-extra" value="5000" readonly
+                      title="Sum of all scheduled one-time payments"
+                      style="background: rgba(255, 255, 255, 0.04); cursor: pointer;">
+                    <button type="button" id="btn-manage-onetime" class="btn btn-xs btn-outline btn-manage-onetime"
+                      title="Manage Scheduled One-Time Extra Payments">
                       <i class="fa-solid fa-pen-to-square"></i> Edit Schedule
                     </button>
                   </div>
@@ -440,14 +444,15 @@
                 <div class="recast-card-header">
                   <div class="recast-toggle-title">
                     <i class="fa-solid fa-arrows-rotate text-primary"></i>
-                    <span>Model Loan Recast <i class="fa-solid fa-circle-info info-icon" data-term="recast" title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
+                    <span>Model Loan Recast <i class="fa-solid fa-circle-info info-icon" data-term="recast"
+                        title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
                   </div>
                   <label class="switch-toggle" title="Toggle Loan Recast Simulation">
                     <input type="checkbox" id="enable-recast">
                     <span class="switch-slider"></span>
                   </label>
                 </div>
-                
+
                 <div class="recast-card-body" id="recast-card-body" style="display: none;">
                   <div class="form-field-group">
                     <div class="input-group-row">
@@ -468,10 +473,12 @@
                     </div>
                     <div class="input-group-row">
                       <div class="width-50 slider-wrapper">
-                        <input type="range" id="recast-amount-slider" min="5000" max="200000" step="5000" value="50000" class="slider">
+                        <input type="range" id="recast-amount-slider" min="5000" max="200000" step="5000" value="50000"
+                          class="slider">
                       </div>
                       <div class="width-50 slider-wrapper">
-                        <input type="range" id="recast-month-slider" min="12" max="240" step="6" value="60" class="slider">
+                        <input type="range" id="recast-month-slider" min="12" max="240" step="6" value="60"
+                          class="slider">
                       </div>
                     </div>
                   </div>
@@ -489,6 +496,14 @@
                   </div>
                 </div>
               </div>
+
+              <!-- Reset Accelerate Payoff Action -->
+              <div class="form-field-group">
+                <button type="button" id="btn-reset-payoff" class="btn btn-outline btn-block btn-sm"
+                  title="Reset all extra payment and recast numbers to zero">
+                  <i class="fa-solid fa-arrow-rotate-left"></i> Reset Payoff Inputs to $0
+                </button>
+              </div>
             </div>
           </div>
 
@@ -503,7 +518,7 @@
           <!-- Card 1: Monthly Payment with Interactive Donut Chart Toggle -->
           <div class="kpi-card highlight" id="kpi-piti-card">
             <div class="kpi-header">
-              <span>Standard Monthly PITI <i class="fa-solid fa-circle-info info-icon" data-term="piti"
+              <span>Monthly Payment (PITI) <i class="fa-solid fa-circle-info info-icon" data-term="piti"
                   title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
               <div class="kpi-view-toggle" id="piti-view-toggle">
                 <button type="button" class="btn-toggle-view active" id="btn-piti-view-text" title="Text Metrics View"
@@ -530,7 +545,8 @@
                   <strong id="kpi-total-payment">$0.00</strong>
                 </div>
                 <div id="recast-kpi-sub-row" class="piti-badge-row recast-kpi-row" style="display: none;">
-                  <span class="badge-label">Post-Recast PITI (Mo <span id="recast-kpi-reset-mo">61</span>+):</span>
+                  <span class="badge-label">Post-Recast Monthly Payment (Mo <span
+                      id="recast-kpi-reset-mo">61</span>+):</span>
                   <strong id="recast-kpi-adjusted-payment">$0.00</strong>
                 </div>
                 <div id="arm-kpi-sub-row" class="piti-badge-row arm-row" style="display: none;">
@@ -593,7 +609,7 @@
           <!-- Card 2: Net Monthly Cash Flow & Circular DTI Gauge -->
           <div class="kpi-card highlight" id="kpi-cash-flow-card">
             <div class="kpi-header">
-              <span>Net Cash Flow &amp; DTI <i class="fa-solid fa-circle-info info-icon" data-term="net-cash-flow"
+              <span>Net Cash Flow (Debt-to-Income)<i class="fa-solid fa-circle-info info-icon" data-term="net-cash-flow"
                   title="Click for plain-English explanation" role="button" tabindex="0"></i></span>
               <i class="fa-solid fa-scale-balanced" id="kpi-cash-flow-icon"></i>
             </div>
@@ -601,7 +617,7 @@
             <div class="kpi-dti-container">
               <div class="cash-flow-hero-column">
                 <div class="kpi-value" id="kpi-net-cash-flow">$0.00</div>
-                <span class="cash-flow-hero-sublabel">Net Discretionary Cash Flow</span>
+                <span class="cash-flow-hero-sublabel">Net Cash Flow</span>
 
                 <div id="dti-status-pill" class="dti-status-pill ideal">
                   <i class="fa-solid fa-shield-halved" id="dti-status-icon"></i>
@@ -733,10 +749,14 @@
             <div class="chart-header-actions">
               <div class="chart-view-presets" id="chart-view-presets">
                 <span class="preset-label"><i class="fa-solid fa-eye"></i> View:</span>
-                <button type="button" class="btn btn-xs btn-chart-view active" data-view="balance" title="Remaining Loan Principal Balance Trajectory">Balance</button>
-                <button type="button" class="btn btn-xs btn-chart-view" data-view="interest" title="Cumulative Total Interest Paid Over Time">Interest</button>
-                <button type="button" class="btn btn-xs btn-chart-view" data-view="monthly" title="Monthly Payment Breakdown (Principal vs Interest vs Escrow)">Monthly</button>
-                <button type="button" class="btn btn-xs btn-chart-view" data-view="annual" title="Annual Amortization Horizon Breakdown">Annual</button>
+                <button type="button" class="btn btn-xs btn-chart-view active" data-view="balance"
+                  title="Remaining Loan Principal Balance Trajectory">Balance</button>
+                <button type="button" class="btn btn-xs btn-chart-view" data-view="interest"
+                  title="Cumulative Total Interest Paid Over Time">Interest</button>
+                <button type="button" class="btn btn-xs btn-chart-view" data-view="monthly"
+                  title="Monthly Payment Breakdown (Principal vs Interest vs Escrow)">Monthly</button>
+                <button type="button" class="btn btn-xs btn-chart-view" data-view="annual"
+                  title="Annual Amortization Horizon Breakdown">Annual</button>
               </div>
               <div class="chart-zoom-presets" id="chart-zoom-presets">
                 <span class="zoom-label"><i class="fa-solid fa-magnifying-glass-plus"></i> Zoom:</span>
@@ -906,7 +926,9 @@
 
         <div class="disclaimer-section">
           <h4><i class="fa-solid fa-user-shield"></i> 1. Privacy &amp; Data Storage Policy (100% Local-First)</h4>
-          <p>Mortgage-Abilty.com respects your financial privacy. <strong>No personal data, financial parameters, budgets, scenario names, or notes are transmitted to, collected by, or shared with the site's creators or any third parties.</strong></p>
+          <p>Mortgage-Abilty.com respects your financial privacy. <strong>No personal data, financial parameters,
+              budgets, scenario names, or notes are transmitted to, collected by, or shared with the site's creators or
+              any third parties.</strong></p>
           <ul class="disclaimer-list">
             <li><strong>Browser Storage Only:</strong> All inputs and saved financial scenarios reside strictly in your
               browser's local storage (<code>localStorage</code>).</li>
@@ -960,10 +982,12 @@
     <div class="modal-card modal-card-md">
       <div class="modal-header">
         <h3><i class="fa-solid fa-calendar-plus"></i> Schedule One-Time Extra Payments</h3>
-        <button type="button" id="btn-x-close-onetime" class="btn-close-modal"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" id="btn-x-close-onetime" class="btn-close-modal"><i
+            class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="modal-body">
-        <p class="modal-description mb-3">Add additional lump-sum extra payments at specific months to see how early lump sums compound interest savings over time.</p>
+        <p class="modal-description mb-3">Add additional lump-sum extra payments at specific months to see how early
+          lump sums compound interest savings over time.</p>
 
         <!-- Form to Add a New Payment -->
         <div class="onetime-add-card mb-4">
@@ -973,13 +997,16 @@
               <label for="input-add-onetime-amount">Payment Amount ($)</label>
               <div class="input-wrapper prefix">
                 <span class="input-addon">$</span>
-                <input type="number" id="input-add-onetime-amount" value="5000" min="1" max="1000000" step="500" placeholder="e.g. 5000">
+                <input type="number" id="input-add-onetime-amount" value="5000" min="1" max="1000000" step="500"
+                  placeholder="e.g. 5000">
               </div>
             </div>
             <div class="input-group width-50">
-              <label for="input-add-onetime-month">At Month # <span id="add-onetime-year-hint" class="text-muted">(Yr 1)</span></label>
+              <label for="input-add-onetime-month">At Month # <span id="add-onetime-year-hint" class="text-muted">(Yr
+                  1)</span></label>
               <div class="input-wrapper suffix">
-                <input type="number" id="input-add-onetime-month" value="12" min="1" max="600" step="1" placeholder="e.g. 12">
+                <input type="number" id="input-add-onetime-month" value="12" min="1" max="600" step="1"
+                  placeholder="e.g. 12">
                 <span class="input-addon">Mo</span>
               </div>
             </div>

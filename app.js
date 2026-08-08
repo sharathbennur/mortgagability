@@ -48,6 +48,7 @@ const elLoanTerm = document.getElementById('loan-term');
 const elTermSlider = document.getElementById('term-slider');
 const elExtraMonthly = document.getElementById('extra-monthly');
 const elExtraMonthlySlider = document.getElementById('extra-monthly-slider');
+const elBtnResetPayoff = document.getElementById('btn-reset-payoff');
 const elOneTimeExtra = document.getElementById('one-time-extra');
 const elOneTimeMonth = document.getElementById('one-time-month');
 const elPropertyTax = document.getElementById('property-tax');
@@ -2479,6 +2480,31 @@ function setupEventHandlers() {
   if (elOneTimeExtra) elOneTimeExtra.addEventListener('input', recalculate);
   if (elOneTimeMonth) elOneTimeMonth.addEventListener('input', recalculate);
 
+  // Reset Accelerate Payoff inputs
+  if (elBtnResetPayoff) {
+    elBtnResetPayoff.addEventListener('click', () => {
+      // 1. Reset Extra Monthly Payment to 0
+      if (elExtraMonthly) elExtraMonthly.value = 0;
+      if (elExtraMonthlySlider) elExtraMonthlySlider.value = 0;
+
+      // 2. Clear Scheduled One-Time Extra Payments & total input
+      setScheduledOneTimePayments([]);
+      if (elOneTimeExtra) elOneTimeExtra.value = 0;
+      if (typeof renderOneTimePaymentsList === 'function') {
+        renderOneTimePaymentsList();
+      }
+
+      // 3. Reset Recast Settings to 0 / OFF
+      if (elEnableRecast) elEnableRecast.checked = false;
+      if (elRecastCardBody) elRecastCardBody.style.display = 'none';
+      if (elRecastAmount) elRecastAmount.value = 0;
+      if (elRecastAmountSlider) elRecastAmountSlider.value = elRecastAmountSlider.min || 0;
+
+      // 4. Recalculate
+      recalculate();
+    });
+  }
+
 
 
   // Table View Toggles
@@ -2903,7 +2929,7 @@ const GLOSSARY_TERMS = {
     definition: 'Annual hazard insurance premium protecting your property against damage, expressed as a percentage of home value.'
   },
   'piti': {
-    title: 'Standard Monthly PITI',
+    title: 'Monthly Payment (PITI)',
     category: 'payment',
     icon: 'fa-file-invoice-dollar',
     definition: 'Your total recurring monthly housing obligation: Principal (P), Interest (I), Property Taxes (T), and Hazard Insurance (I).'
