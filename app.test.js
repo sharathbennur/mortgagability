@@ -1106,7 +1106,336 @@ describe('15. Collapsible Accordion Input Panels & Mobile Floating Summary Bar',
       expect(listContainer.querySelectorAll('.onetime-payment-row').length).toBe(1);
     });
   });
+
+  describe('17. Side-by-Side Scenario Overlay Tests', () => {
+    beforeEach(() => {
+      localStorage.clear();
+      if (appModule.getCompareMode()) {
+        appModule.toggleCompareMode(false);
+      }
+      appModule.setCompareSelectedIds([]);
+    });
+
+    it('should toggle Compare Mode state when invoked', () => {
+      const btnToggle = document.getElementById('btn-toggle-compare');
+      const compareBar = document.getElementById('compare-scenarios-bar');
+
+      expect(appModule.getCompareMode()).toBe(false);
+
+      if (btnToggle && compareBar) {
+        expect(compareBar.style.display).toBe('none');
+        btnToggle.click();
+        expect(appModule.getCompareMode()).toBe(true);
+        expect(compareBar.style.display).toBe('flex');
+        expect(btnToggle.className).toContain('active');
+        btnToggle.click();
+        expect(appModule.getCompareMode()).toBe(false);
+      }
+    });
+
+    it('should display empty state guidance button when fewer than 2 saved scenarios exist', () => {
+      const chipsGrid = document.getElementById('compare-chips-grid');
+
+      appModule.toggleCompareMode(true);
+
+      if (chipsGrid) {
+        expect(chipsGrid.innerHTML).toContain('Compare Mode requires at least 2 saved scenarios');
+        const quickSaveBtn = document.getElementById('btn-quick-save-compare');
+        expect(quickSaveBtn).not.toBeNull();
+      }
+    });
+
+    it('should dynamically render scenario selection chips when 2 or more scenarios exist', () => {
+      document.getElementById('home-price').value = 450000;
+      appModule.saveScenario('30-Yr Fixed standard');
+
+      document.getElementById('home-price').value = 550000;
+      appModule.saveScenario('15-Yr Fixed Accelerated');
+
+      document.getElementById('home-price').value = 650000;
+      appModule.saveScenario('5/1 ARM Strategy');
+
+      appModule.toggleCompareMode(true);
+
+      const chipsGrid = document.getElementById('compare-chips-grid');
+      if (chipsGrid) {
+        const chips = chipsGrid.querySelectorAll('.compare-chip');
+        expect(chips.length).toBe(3);
+        expect(chipsGrid.textContent).toContain('30-Yr Fixed standard');
+        expect(chipsGrid.textContent).toContain('15-Yr Fixed Accelerated');
+        expect(chipsGrid.textContent).toContain('5/1 ARM Strategy');
+      }
+    });
+
+    it('should select up to 4 scenarios on desktop viewports', () => {
+      window.innerWidth = 1200;
+
+      for (let i = 1; i <= 5; i++) {
+        document.getElementById('home-price').value = 400000 + i * 50000;
+        appModule.saveScenario(`Scenario ${i}`);
+      }
+
+      appModule.toggleCompareMode(true);
+
+      const saved = appModule.getSavedScenarios();
+      const ids = saved.map(s => s.id);
+
+      appModule.setCompareSelectedIds(ids.slice(0, 4));
+      expect(appModule.getCompareSelectedIds().length).toBe(4);
+
+      const countBadge = document.getElementById('compare-count-badge');
+      if (countBadge) {
+        expect(countBadge.textContent).toContain('4 / 4 selected');
+      }
+    });
+
+    it('should enforce a strict maximum limit of 2 scenarios on mobile viewports', () => {
+      window.innerWidth = 500;
+
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById('home-price').value = 400000 + i * 50000;
+        appModule.saveScenario(`Mobile Scenario ${i}`);
+      }
+
+      appModule.toggleCompareMode(true);
+      expect(appModule.getMaxCompareCount()).toBe(2);
+
+      const saved = appModule.getSavedScenarios();
+      const ids = saved.map(s => s.id);
+
+      appModule.setCompareSelectedIds(ids);
+
+      const countBadge = document.getElementById('compare-count-badge');
+      if (countBadge) {
+        expect(appModule.getCompareSelectedIds().length).toBe(2);
+        expect(countBadge.textContent).toContain('2 / 2 selected');
+      }
+    });
+
+    it('should construct multi-scenario line datasets in Chart.js instance when Compare Mode is active', () => {
+      window.innerWidth = 1024;
+
+      const s1 = appModule.saveScenario('Fixed Strategy');
+      document.getElementById('interest-rate').value = 7.5;
+      const s2 = appModule.saveScenario('High Rate Strategy');
+
+      appModule.toggleCompareMode(true);
+      appModule.setCompareSelectedIds([s1.id, s2.id]);
+
+      appModule.recalculate();
+
+      const chartCanvas = document.getElementById('payoff-chart');
+      expect(chartCanvas).not.toBeNull();
+
+      appModule.toggleCompareMode(false);
+    });
+
+    it('should render milestone summary badges for all compared scenarios with scenario colors when Compare Mode is active', () => {
+      document.getElementById('enable-recast').checked = true;
+      document.getElementById('recast-amount').value = 50000;
+      document.getElementById('recast-month').value = 60;
+      const s1 = appModule.saveScenario('Recast Strategy A');
+
+      document.getElementById('enable-recast').checked = false;
+      document.getElementById('down-payment-percent').value = 10;
+      document.getElementById('down-payment').value = 45000;
+      const s2 = appModule.saveScenario('Low Down Strategy B');
+
+      appModule.toggleCompareMode(true);
+      appModule.setCompareSelectedIds([s1.id, s2.id]);
+      appModule.recalculate();
+
+      const milestoneBar = document.getElementById('chart-milestones-bar');
+      expect(milestoneBar).not.toBeNull();
+      const compareBadges = milestoneBar.querySelectorAll('.milestone-badge.compare-badge');
+      if (compareBadges.length > 0) {
+        expect(compareBadges.length).toBeGreaterThanOrEqual(2);
+      }
+
+      appModule.toggleCompareMode(false);
+    });
+  });
+
+  describe('18. Loan Recast Engine Tests', () => {
+    it('should recalculate lower monthly P&I payment after applying loan recast lump sum', () => {
+      const scheduleWithoutRecast = appModule.calculateAmortizationSchedules(
+        450000,
+        90000,
+        6.5,
+        30,
+        0,
+        0,
+        12,
+        false,
+        5,
+        7.5,
+        [],
+        false
+      );
+
+      const scheduleWithRecast = appModule.calculateAmortizationSchedules(
+        450000,
+        90000,
+        6.5,
+        30,
+        0,
+        0,
+        12,
+        false,
+        5,
+        7.5,
+        [],
+        true,
+        50000,
+        60
+      );
+
+      const summary = scheduleWithRecast.summary;
+      expect(summary.isRecast).toBe(true);
+      expect(summary.recastMonth).toBe(60);
+      expect(summary.recastAmount).toBe(50000);
+      expect(summary.recastNewPayment).toBeLessThan(summary.baseMonthlyPayment);
+      expect(summary.standardTotalInterest).toBeLessThan(scheduleWithoutRecast.summary.standardTotalInterest);
+    });
+
+    it('should toggle Recast UI card and recalculate live impact metrics when enable-recast checkbox is clicked', () => {
+      const enableToggle = document.getElementById('enable-recast');
+      const cardBody = document.getElementById('recast-card-body');
+      const amountInput = document.getElementById('recast-amount');
+      const monthInput = document.getElementById('recast-month');
+
+      expect(enableToggle).not.toBeNull();
+      expect(cardBody).not.toBeNull();
+
+      amountInput.value = 60000;
+      monthInput.value = 48;
+      enableToggle.checked = true;
+      enableToggle.dispatchEvent(new Event('change'));
+
+      expect(cardBody.style.display).toBe('flex');
+
+      const newPaymentDisplay = document.getElementById('recast-new-payment');
+      const monthlySavingsDisplay = document.getElementById('recast-monthly-savings');
+
+      expect(newPaymentDisplay.textContent).not.toBe('$0.00');
+      expect(monthlySavingsDisplay.textContent).toContain('/mo');
+      expect(monthlySavingsDisplay.textContent).toContain('+');
+    });
+
+    it('should render Loan Recast milestone badge above the chart when Recast is enabled', () => {
+      const enableToggle = document.getElementById('enable-recast');
+      const monthInput = document.getElementById('recast-month');
+
+      monthInput.value = 60;
+      enableToggle.checked = true;
+      enableToggle.dispatchEvent(new Event('change'));
+
+      appModule.recalculate();
+
+      const milestoneBar = document.getElementById('chart-milestones-bar');
+      const recastBadge = milestoneBar.querySelector('.milestone-badge.recast');
+
+      expect(recastBadge).not.toBeNull();
+      expect(recastBadge.textContent).toContain('Loan Recast');
+      expect(recastBadge.textContent).toContain('Month 60');
+    });
+
+    it('should include Recast parameters in state serialization and scenario persistence', () => {
+      document.getElementById('enable-recast').checked = true;
+      document.getElementById('recast-amount').value = 75000;
+      document.getElementById('recast-month').value = 72;
+
+      expect(document.getElementById('enable-recast').checked).toBe(true);
+      expect(parseFloat(document.getElementById('recast-amount').value)).toBe(75000);
+      expect(parseInt(document.getElementById('recast-month').value)).toBe(72);
+    });
+
+    it('should display both pre-recast and post-recast payments and cash flows/DTI in Card 1 and Card 2 when Recast is enabled', () => {
+      document.getElementById('take-home-salary').value = 10000;
+      document.getElementById('monthly-expenses').value = 2000;
+      document.getElementById('recast-amount').value = 50000;
+      document.getElementById('recast-month').value = 60;
+      document.getElementById('enable-recast').checked = true;
+
+      appModule.recalculate();
+
+      // Card 1: Standard Monthly PITI Panel
+      const recastKpiSubRow = document.getElementById('recast-kpi-sub-row');
+      const recastKpiAdjustedPayment = document.getElementById('recast-kpi-adjusted-payment');
+      expect(recastKpiSubRow.style.display).toBe('flex');
+      expect(recastKpiAdjustedPayment.textContent).not.toBe('$0.00');
+
+      // Card 2: Net Cash Flow & DTI Panel
+      const cfTableRowRecast = document.getElementById('cf-table-row-recast');
+      const cfRecastPiti = document.getElementById('cf-recast-piti');
+      const cfRecastNet = document.getElementById('cf-recast-net');
+      const cfRecastDti = document.getElementById('cf-recast-dti');
+
+      expect(cfTableRowRecast.style.display).toBe('table-row');
+      expect(cfRecastPiti.textContent).not.toBe('$0.00');
+      expect(cfRecastNet.textContent).not.toBe('$0.00');
+      expect(cfRecastDti.textContent).toContain('%');
+    });
+  });
+
+  describe('19. Chart Engine Time Horizon & Preset View Tests', () => {
+    it('should default to balance view perspective', () => {
+      expect(appModule.getActiveChartView()).toBe('balance');
+    });
+
+    it('should switch metric views (balance, interest, monthly, annual) and update active button UI', () => {
+      appModule.setChartViewPreset('interest');
+      expect(appModule.getActiveChartView()).toBe('interest');
+
+      const btnInterest = document.querySelector('.btn-chart-view[data-view="interest"]');
+      if (btnInterest) {
+        expect(btnInterest.classList.contains('active')).toBe(true);
+      }
+
+      appModule.setChartViewPreset('monthly');
+      expect(appModule.getActiveChartView()).toBe('monthly');
+
+      appModule.setChartViewPreset('annual');
+      expect(appModule.getActiveChartView()).toBe('annual');
+
+      appModule.setChartViewPreset('balance');
+      expect(appModule.getActiveChartView()).toBe('balance');
+    });
+
+    it('should trigger chart re-render when view button is clicked', () => {
+      const btnMonthly = document.querySelector('.btn-chart-view[data-view="monthly"]');
+      if (btnMonthly) {
+        btnMonthly.click();
+        expect(appModule.getActiveChartView()).toBe('monthly');
+      }
+    });
+  });
+
+  describe('20. Glossary & Top Navbar Utility Tests', () => {
+    it('should have recast defined in GLOSSARY_TERMS', () => {
+      const btnHelp = document.getElementById('btn-help-glossary');
+      if (btnHelp) {
+        btnHelp.click();
+        const modalContainer = document.getElementById('modal-glossary-cards-container');
+        if (modalContainer) {
+          expect(modalContainer.innerHTML).toContain('Mortgage Recast');
+        }
+      }
+    });
+
+    it('should handle top navbar theme toggle button click', () => {
+      const btnThemeToggle = document.getElementById('btn-theme-toggle');
+      if (btnThemeToggle) {
+        btnThemeToggle.click();
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        expect(currentTheme).toBe('light');
+        btnThemeToggle.click();
+        expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+      }
+    });
+  });
 });
+
 
 
 

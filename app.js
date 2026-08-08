@@ -14,6 +14,15 @@ let activeTableViewMode = 'annual'; // 'annual' or 'monthly'
 let currentTablePage = 1;
 const rowsPerPage = 12; // 1 year of months per page for monthly view
 let activeZoomPreset = 'full'; // '5Y', '10Y', '15Y', or 'full'
+let activeChartView = 'balance'; // 'balance', 'interest', 'monthly', or 'annual'
+let isCompareMode = false;
+let compareSelectedIds = [];
+const COMPARE_SCENARIO_COLORS = [
+  { color: '#6366f1', lightColor: '#4f46e5', bg: 'rgba(99, 102, 241, 0.12)', bgLight: '#eef2ff' },
+  { color: '#10b981', lightColor: '#059669', bg: 'rgba(16, 185, 129, 0.12)', bgLight: '#ecfdf5' },
+  { color: '#f59e0b', lightColor: '#d97706', bg: 'rgba(245, 158, 11, 0.12)', bgLight: '#fffbeb' },
+  { color: '#a855f7', lightColor: '#9333ea', bg: 'rgba(168, 85, 247, 0.12)', bgLight: '#faf5ff' }
+];
 let scheduledOneTimePayments = [
   { id: 'default-1', amount: 5000, month: 12 }
 ];
@@ -45,6 +54,27 @@ const elPropertyTax = document.getElementById('property-tax');
 const elPropertyTaxSlider = document.getElementById('property-tax-slider');
 const elHomeInsurance = document.getElementById('home-insurance');
 const elHomeInsuranceSlider = document.getElementById('home-insurance-slider');
+
+// Loan Recast DOM Elements
+const elEnableRecast = document.getElementById('enable-recast');
+const elRecastCardBody = document.getElementById('recast-card-body');
+const elRecastAmount = document.getElementById('recast-amount');
+const elRecastAmountSlider = document.getElementById('recast-amount-slider');
+const elRecastMonth = document.getElementById('recast-month');
+const elRecastMonthSlider = document.getElementById('recast-month-slider');
+const elRecastNewPayment = document.getElementById('recast-new-payment');
+const elRecastMonthlySavings = document.getElementById('recast-monthly-savings');
+const elRecastKpiSubRow = document.getElementById('recast-kpi-sub-row');
+const elRecastKpiResetMo = document.getElementById('recast-kpi-reset-mo');
+const elRecastKpiAdjustedPayment = document.getElementById('recast-kpi-adjusted-payment');
+const elRecastCfSubRow = document.getElementById('recast-cf-sub-row');
+const elRecastCfStartMo = document.getElementById('recast-cf-start-mo');
+const elRecastCfValues = document.getElementById('recast-cf-values');
+const elCfTableRowRecast = document.getElementById('cf-table-row-recast');
+const elCfRecastMoText = document.getElementById('cf-recast-mo-text');
+const elCfRecastPiti = document.getElementById('cf-recast-piti');
+const elCfRecastNet = document.getElementById('cf-recast-net');
+const elCfRecastDti = document.getElementById('cf-recast-dti');
 
 // ARM & Loan Type DOM Elements
 const elArmSettingsPanel = document.getElementById('arm-settings-panel');
@@ -210,7 +240,11 @@ function calculateAmortizationSchedules(
   oneTimeMonth,
   isArm = false,
   armFixedYears = 5,
-  armAdjustedRate = 7.5
+  armAdjustedRate = 7.5,
+  scheduledOneTimePayments = [],
+  isRecast = false,
+  recastAmount = 50000,
+  recastMonth = 60
 ) {
   const principal = Math.max(0, homePrice - downPayment);
   const initialMonthlyRate = (annualRate / 100) / 12;
@@ -220,6 +254,9 @@ function calculateAmortizationSchedules(
 
   const baseMonthlyPayment = calculateMonthlyPayment(principal, annualRate, termYears);
   let adjustedMonthlyPayment = baseMonthlyPayment;
+
+  const isRecastActive = !!isRecast && recastAmount > 0 && recastMonth > 0 && recastMonth < standardTermMonths;
+  let recastNewPayment = null;
 
   // 1. Generate Standard Schedule
   const standardSchedule = [];
@@ -245,6 +282,12 @@ function calculateAmortizationSchedules(
       principalPaid = stdBalance;
     }
 
+    // Check for Recast at specified month
+    if (isRecastActive && m === recastMonth) {
+      const recastLump = Math.min(stdBalance - principalPaid, recastAmount);
+      principalPaid += recastLump;
+    }
+
     const endingBalance = Math.max(0, stdBalance - principalPaid);
     stdTotalInterest += interestPaid;
 
@@ -260,6 +303,14 @@ function calculateAmortizationSchedules(
     });
 
     stdBalance = endingBalance;
+
+    // Recalculate base payment starting next month after recast
+    if (isRecastActive && m === recastMonth && stdBalance > 0) {
+      const remainingTermMonths = Math.max(1, standardTermMonths - recastMonth);
+      const activeRate = (isArm && m >= armFixedMonths) ? armAdjustedRate : annualRate;
+      stdBasePayment = calculateMonthlyPayment(stdBalance, activeRate, remainingTermMonths / 12);
+      recastNewPayment = stdBasePayment;
+    }
   }
 
   // 2. Generate Accelerated Schedule
@@ -273,18 +324,18 @@ function calculateAmortizationSchedules(
     // Check if ARM reset month reached for accelerated path
     if (isArm && m === armFixedMonths + 1) {
       const remainingTermYears = Math.max(1, termYears - (armFixedMonths / 12));
-      accBasePayment = accBalance > 0 
+      accBasePayment = accBalance > 0
         ? calculateMonthlyPayment(accBalance, armAdjustedRate, remainingTermYears)
         : 0;
     }
 
     const currentRate = (isArm && m > armFixedMonths) ? adjustedMonthlyRate : initialMonthlyRate;
     const interestPaid = accBalance * currentRate;
-    
+
     // Scheduled payment (interest + scheduled principal)
     let scheduledPayment = accBasePayment;
     let basePrincipalPaid = scheduledPayment - interestPaid;
-    
+
     // Capping at remaining balance
     if (accBalance + interestPaid < scheduledPayment) {
       scheduledPayment = accBalance + interestPaid;
@@ -294,6 +345,13 @@ function calculateAmortizationSchedules(
 
     // Determine extra payment
     let appliedExtra = extraMonthly + getLumpSumForMonth(oneTimeExtra, oneTimeMonth, m);
+
+    // Apply recast lump sum at recastMonth
+    let isRecastAppliedThisMonth = false;
+    if (isRecastActive && m === recastMonth) {
+      isRecastAppliedThisMonth = true;
+      appliedExtra += recastAmount;
+    }
 
     // Capping extra payments if balance is paid off early
     let remainingAfterBase = accBalance - basePrincipalPaid;
@@ -313,10 +371,20 @@ function calculateAmortizationSchedules(
       interestPaid: interestPaid,
       principalPaid: totalPrincipalPaid,
       endingBalance: endingBalance,
-      cumulativeInterest: accTotalInterest
+      cumulativeInterest: accTotalInterest,
+      isRecastMonth: isRecastAppliedThisMonth
     });
 
     accBalance = endingBalance;
+
+    // Recalculate base payment starting next month after recast
+    if (isRecastActive && m === recastMonth && accBalance > 0) {
+      const remainingTermMonths = Math.max(1, standardTermMonths - recastMonth);
+      const activeRate = (isArm && m >= armFixedMonths) ? armAdjustedRate : annualRate;
+      accBasePayment = calculateMonthlyPayment(accBalance, activeRate, remainingTermMonths / 12);
+      if (!recastNewPayment) recastNewPayment = accBasePayment;
+    }
+
     m++;
   }
 
@@ -324,22 +392,22 @@ function calculateAmortizationSchedules(
   const stdTotalPaid = principal + stdTotalInterest;
   const accTotalPaid = principal + accTotalInterest;
   const interestSaved = Math.max(0, stdTotalInterest - accTotalInterest);
-  
+
   const stdMonths = standardSchedule.length;
   const accMonths = acceleratedSchedule.length;
   const monthsSaved = Math.max(0, stdMonths - accMonths);
 
-  // Breakdown of Interest Savings by Source (Extra Monthly vs One-Time Lump Sum)
+  // Breakdown of Interest Savings by Source
   let savingsMonthlyAllocated = 0;
   let savingsLumpSumAllocated = 0;
 
-  const hasLumpSum = getTotalLumpSumAmount(oneTimeExtra) > 0;
+  const hasLumpSum = getTotalLumpSumAmount(oneTimeExtra) > 0 || isRecastActive;
 
   if (interestSaved > 0) {
     if (extraMonthly > 0 && hasLumpSum) {
       const interestWithMonthlyOnly = simulateTotalInterest(principal, annualRate, termYears, extraMonthly, 0, oneTimeMonth, isArm, armFixedYears, armAdjustedRate);
       const interestWithLumpOnly = simulateTotalInterest(principal, annualRate, termYears, 0, oneTimeExtra, oneTimeMonth, isArm, armFixedYears, armAdjustedRate);
-      
+
       const standaloneMonthly = Math.max(0, stdTotalInterest - interestWithMonthlyOnly);
       const standaloneLump = Math.max(0, stdTotalInterest - interestWithLumpOnly);
       const totalStandalone = standaloneMonthly + standaloneLump;
@@ -366,7 +434,7 @@ function calculateAmortizationSchedules(
   if (downPercent < 20 && homePrice > 0) {
     const target80Balance = homePrice * 0.8;
     const pmiRow = acceleratedSchedule.find(r => r.endingBalance <= target80Balance) ||
-                   standardSchedule.find(r => r.endingBalance <= target80Balance);
+      standardSchedule.find(r => r.endingBalance <= target80Balance);
     if (pmiRow) {
       pmiDropMonth = pmiRow.month;
     }
@@ -385,6 +453,10 @@ function calculateAmortizationSchedules(
       isArm: isArm,
       armFixedYears: armFixedYears,
       armAdjustedRate: armAdjustedRate,
+      isRecast: isRecastActive,
+      recastAmount: isRecastActive ? recastAmount : 0,
+      recastMonth: isRecastActive ? recastMonth : null,
+      recastNewPayment: isRecastActive ? (recastNewPayment || baseMonthlyPayment) : null,
       standardTotalInterest: stdTotalInterest,
       standardTotalPaid: stdTotalPaid,
       acceleratedTotalInterest: accTotalInterest,
@@ -412,7 +484,7 @@ function simulateTotalInterest(principal, initialRate, termYears, extraMonthly =
   const adjustedMonthlyRate = (armAdjustedRate / 100) / 12;
   const armFixedMonths = armFixedYears * 12;
   let basePayment = initialMonthlyRate === 0 ? principal / (termYears * 12) : calculateMonthlyPayment(principal, initialRate, termYears);
-  
+
   let m = 1;
   while (balance > 0 && m <= 600) {
     if (isArm && m === armFixedMonths + 1) {
@@ -447,7 +519,7 @@ function updateTargetTermCalculator() {
   const targetYears = parseFloat(elTargetTerm.value) || 15;
   const targetPrincipal = parseFloat(elTargetPrincipal.value) || 0;
   const annualRate = parseFloat(elInterestRate.value) || 0;
-  
+
   const monthlyRate = (annualRate / 100) / 12;
   const targetMonths = targetYears * 12;
   const originalBasePayment = currentSchedule.summary.baseMonthlyPayment || 0;
@@ -471,7 +543,7 @@ function updateTargetTermCalculator() {
   // If remaining principal is different from original principal, we compare with the base payment
   // corresponding to the original loan.
   elTargetExtraPayment.textContent = formatCurrency(extraMonthlyRequired);
-  
+
   const homePrice = parseFloat(document.getElementById('home-price').value) || 0;
   const propTaxRate = parseFloat(elPropertyTax.value) || 0;
   const insRate = parseFloat(elHomeInsurance.value) || 0;
@@ -495,7 +567,7 @@ function updateTargetTermCalculator() {
   }
 
   elTargetInterestPaid.textContent = formatCurrency(targetTotalInterest);
-  
+
   // Calculate savings vs base schedule
   // Find what the interest would be for the remaining principal under standard payments
   let baseInterestForRemaining = 0;
@@ -555,13 +627,13 @@ function updateUI() {
 
   const propTaxRate = parseFloat(elPropertyTax.value) || 0;
   const insRate = parseFloat(elHomeInsurance.value) || 0;
-  
+
   const monthlyTax = (homePrice * (propTaxRate / 100)) / 12;
   const monthlyInsurance = (homePrice * (insRate / 100)) / 12;
-  
+
   const standardPITI = summary.baseMonthlyPayment + monthlyTax + monthlyInsurance + monthlyPmi;
   elKpiStandardPayment.textContent = formatCurrency(standardPITI);
-  
+
   const totalMonthlyPITIWithExtra = standardPITI + parseFloat(elExtraMonthly.value || 0);
   elKpiTotalPayment.textContent = formatCurrency(totalMonthlyPITIWithExtra);
 
@@ -583,6 +655,19 @@ function updateUI() {
 
   // Render Interactive Donut Chart View
   renderPitiDonutChart(summary.baseMonthlyPayment, monthlyTax, monthlyInsurance, monthlyPmi);
+
+  // Handle Recast KPI sub-row (Post-Recast PITI) in Card 1
+  const postRecastPITI = (summary.isRecast && summary.recastNewPayment)
+    ? summary.recastNewPayment + monthlyTax + monthlyInsurance + monthlyPmi
+    : null;
+
+  if (summary.isRecast && postRecastPITI) {
+    if (elRecastKpiSubRow) elRecastKpiSubRow.style.display = 'flex';
+    if (elRecastKpiResetMo) elRecastKpiResetMo.textContent = summary.recastMonth + 1;
+    if (elRecastKpiAdjustedPayment) elRecastKpiAdjustedPayment.textContent = formatCurrency(postRecastPITI);
+  } else {
+    if (elRecastKpiSubRow) elRecastKpiSubRow.style.display = 'none';
+  }
 
   // Handle ARM KPI sub-row & ARM Phase Badge displays
   if (summary.isArm) {
@@ -611,10 +696,10 @@ function updateUI() {
   const takeHome = parseFloat(elTakeHomeSalary.value) || 0;
   const expenses = parseFloat(elMonthlyExpenses.value) || 0;
   const netCashFlow = takeHome - expenses - totalMonthlyPITIWithExtra;
-  
+
   if (elKpiNetCashFlow) elKpiNetCashFlow.textContent = formatCurrency(netCashFlow);
   if (elKpiDiscretionarySub) elKpiDiscretionarySub.textContent = formatCurrency(expenses);
-  
+
   const elCfTableIncome = document.getElementById('cf-table-income');
   const elCfTablePiti = document.getElementById('cf-table-piti');
   const elCfTableNet = document.getElementById('cf-table-net');
@@ -625,6 +710,36 @@ function updateUI() {
 
   const dti = takeHome > 0 ? ((totalMonthlyPITIWithExtra + expenses) / takeHome) * 100 : 0;
   if (elKpiDtiRatio) elKpiDtiRatio.textContent = `${dti.toFixed(1)}%`;
+
+  // Handle Recast Net Cash Flow & DTI Displays (Card 2 Post-Recast Lifetime Stage)
+  const postRecastPITIWithExtra = postRecastPITI !== null
+    ? postRecastPITI + parseFloat(elExtraMonthly.value || 0)
+    : null;
+
+  const postRecastNetCashFlow = postRecastPITIWithExtra !== null
+    ? takeHome - expenses - postRecastPITIWithExtra
+    : null;
+
+  const postRecastDti = (postRecastPITIWithExtra !== null && takeHome > 0)
+    ? ((postRecastPITIWithExtra + expenses) / takeHome) * 100
+    : null;
+
+  if (summary.isRecast && postRecastNetCashFlow !== null && postRecastDti !== null) {
+    if (elRecastCfSubRow) elRecastCfSubRow.style.display = 'flex';
+    if (elRecastCfStartMo) elRecastCfStartMo.textContent = summary.recastMonth + 1;
+    if (elRecastCfValues) {
+      elRecastCfValues.textContent = `Net: ${formatCurrency(postRecastNetCashFlow)} | DTI: ${postRecastDti.toFixed(1)}%`;
+    }
+
+    if (elCfTableRowRecast) elCfTableRowRecast.style.display = 'table-row';
+    if (elCfRecastMoText) elCfRecastMoText.textContent = summary.recastMonth + 1;
+    if (elCfRecastPiti) elCfRecastPiti.textContent = formatCurrency(postRecastPITIWithExtra);
+    if (elCfRecastNet) elCfRecastNet.textContent = formatCurrency(postRecastNetCashFlow);
+    if (elCfRecastDti) elCfRecastDti.textContent = `${postRecastDti.toFixed(1)}%`;
+  } else {
+    if (elRecastCfSubRow) elRecastCfSubRow.style.display = 'none';
+    if (elCfTableRowRecast) elCfTableRowRecast.style.display = 'none';
+  }
 
   // Circular DTI SVG Gauge calculations
   // Circumference for r=38 is 2 * PI * 38 = 238.76
@@ -662,7 +777,7 @@ function updateUI() {
     if (elDtiStatusText) elDtiStatusText.textContent = 'High Risk (>36%)';
     if (elDtiStatusIcon) elDtiStatusIcon.className = 'fa-solid fa-triangle-exclamation';
   }
-  
+
   // Color code Cash Flow card background based on affordability
   if (netCashFlow < 0) {
     elKpiCashFlowCard.className = 'kpi-card danger';
@@ -674,9 +789,9 @@ function updateUI() {
   elKpiInterestSaved.textContent = formatCurrency(summary.interestSaved);
   elKpiInterestPaid.textContent = formatCurrency(summary.acceleratedTotalInterest);
   elKpiStandardInterestPaid.textContent = formatCurrency(summary.standardTotalInterest);
-  
-  const savingsRate = summary.standardTotalInterest > 0 
-    ? (summary.interestSaved / summary.standardTotalInterest) * 100 
+
+  const savingsRate = summary.standardTotalInterest > 0
+    ? (summary.interestSaved / summary.standardTotalInterest) * 100
     : 0;
   elKpiInterestSavingsRate.textContent = `${savingsRate.toFixed(1)}%`;
 
@@ -707,12 +822,25 @@ function updateUI() {
   }
 
   if (elChipLump) {
-    if (oneTimeExtraVal > 0) {
+    if (oneTimeExtraVal > 0 || summary.isRecast) {
       elChipLump.classList.remove('dimmed');
       elChipLump.classList.add('active');
     } else {
       elChipLump.classList.add('dimmed');
       elChipLump.classList.remove('active');
+    }
+  }
+
+  // Update Recast Live Impact Badge
+  if (summary.isRecast && summary.recastNewPayment) {
+    if (elRecastNewPayment) {
+      elRecastNewPayment.textContent = formatCurrency(summary.recastNewPayment);
+    }
+    if (elRecastMonthlySavings) {
+      const origBase = summary.baseMonthlyPayment || 0;
+      const newBase = summary.recastNewPayment || 0;
+      const savings = Math.max(0, origBase - newBase);
+      elRecastMonthlySavings.textContent = `+${formatCurrency(savings)}/mo`;
     }
   }
 
@@ -765,36 +893,133 @@ function updateMilestoneSummaryStrip() {
   if (!container) return;
 
   container.innerHTML = '';
-  const summary = currentSchedule.summary || {};
   const milestonePills = [];
+  const isLight = typeof document !== 'undefined' && document.documentElement && document.documentElement.getAttribute('data-theme') === 'light';
 
-  if (summary.pmiDropMonth) {
-    const yr = (summary.pmiDropMonth / 12).toFixed(1);
-    milestonePills.push(`
-      <div class="milestone-badge pmi" title="PMI cancels when Loan-to-Value drops below 80%">
-        <span>🚩</span>
-        <span><strong>PMI Drop-Off:</strong> Month ${summary.pmiDropMonth} (${yr} Yrs)</span>
-      </div>
-    `);
-  }
+  const savedScenarios = getSavedScenarios();
+  const activeSelectedScenarios = savedScenarios.filter(s => compareSelectedIds.includes(s.id));
 
-  if (summary.isArm && summary.armResetMonth) {
-    milestonePills.push(`
-      <div class="milestone-badge arm" title="ARM interest rate resets from initial rate to variable reset rate">
-        <span>⚡</span>
-        <span><strong>ARM Interest Reset:</strong> Month ${summary.armResetMonth} (Yr ${summary.armFixedYears}) @ ${summary.armAdjustedRate.toFixed(2)}%</span>
-      </div>
-    `);
-  }
+  if (isCompareMode && activeSelectedScenarios.length >= 2) {
+    activeSelectedScenarios.forEach((s, idx) => {
+      const state = s.state || {};
+      const homePrice = state.homePrice || 450000;
+      const downPayment = state.downPayment || 90000;
+      const interestRate = state.interestRate || 6.5;
+      const loanTerm = state.loanTerm || 30;
+      const extraMonthly = state.extraMonthly || 0;
+      const oneTimeExtra = state.oneTimeExtra || 0;
+      const oneTimeMonth = state.oneTimeMonth || 12;
+      const isArmLoan = !!state.isArmLoan;
+      const armFixedTerm = state.armFixedTerm || 5;
+      const armAdjustedRate = state.armAdjustedRate || 7.5;
+      const scheduledOneTimePayments = state.scheduledOneTimePayments || [];
+      const isRecastEnabled = !!state.isRecastEnabled;
+      const recastAmount = state.recastAmount || 50000;
+      const recastMonth = state.recastMonth || 60;
 
-  if (summary.acceleratedPayoffMonth) {
-    const yr = (summary.acceleratedPayoffMonth / 12).toFixed(1);
-    milestonePills.push(`
-      <div class="milestone-badge payoff" title="Loan is 100% paid off early via extra principal payments">
-        <span>🏁</span>
-        <span><strong>Accelerated Payoff:</strong> Month ${summary.acceleratedPayoffMonth} (${yr} Yrs)</span>
-      </div>
-    `);
+      const sched = calculateAmortizationSchedules(
+        homePrice,
+        downPayment,
+        interestRate,
+        loanTerm,
+        extraMonthly,
+        oneTimeExtra,
+        oneTimeMonth,
+        isArmLoan,
+        armFixedTerm,
+        armAdjustedRate,
+        scheduledOneTimePayments,
+        isRecastEnabled,
+        recastAmount,
+        recastMonth
+      );
+
+      const summary = sched.summary || {};
+      const colorObj = COMPARE_SCENARIO_COLORS[idx % COMPARE_SCENARIO_COLORS.length];
+      const strokeColor = isLight ? colorObj.lightColor : colorObj.color;
+      const bgColor = isLight ? colorObj.bgLight : colorObj.bg;
+      const customStyle = `style="background: ${bgColor}; border-color: ${strokeColor}; color: ${strokeColor};"`;
+
+      if (summary.pmiDropMonth) {
+        const yr = (summary.pmiDropMonth / 12).toFixed(1);
+        milestonePills.push(`
+          <div class="milestone-badge pmi compare-badge" ${customStyle} title="[${s.name}] PMI cancels when LTV drops below 80%">
+            <span>🚩</span>
+            <span><strong>[${s.name}] PMI Drop:</strong> Month ${summary.pmiDropMonth} (${yr} Yrs)</span>
+          </div>
+        `);
+      }
+
+      if (summary.isArm && summary.armResetMonth) {
+        milestonePills.push(`
+          <div class="milestone-badge arm compare-badge" ${customStyle} title="[${s.name}] ARM interest rate reset">
+            <span>⚡</span>
+            <span><strong>[${s.name}] ARM Reset:</strong> Month ${summary.armResetMonth} (Yr ${summary.armFixedYears}) @ ${summary.armAdjustedRate.toFixed(2)}%</span>
+          </div>
+        `);
+      }
+
+      if (summary.isRecast && summary.recastMonth) {
+        const yr = (summary.recastMonth / 12).toFixed(1);
+        milestonePills.push(`
+          <div class="milestone-badge recast compare-badge" ${customStyle} title="[${s.name}] Mortgage Recast">
+            <span>🔄</span>
+            <span><strong>[${s.name}] Loan Recast:</strong> Month ${summary.recastMonth} (${yr} Yrs) - $${Math.round(summary.recastAmount / 1000)}k</span>
+          </div>
+        `);
+      }
+
+      if (summary.acceleratedPayoffMonth) {
+        const yr = (summary.acceleratedPayoffMonth / 12).toFixed(1);
+        milestonePills.push(`
+          <div class="milestone-badge payoff compare-badge" ${customStyle} title="[${s.name}] Accelerated Payoff">
+            <span>🏁</span>
+            <span><strong>[${s.name}] Payoff:</strong> Month ${summary.acceleratedPayoffMonth} (${yr} Yrs)</span>
+          </div>
+        `);
+      }
+    });
+  } else {
+    const summary = currentSchedule.summary || {};
+
+    if (summary.pmiDropMonth) {
+      const yr = (summary.pmiDropMonth / 12).toFixed(1);
+      milestonePills.push(`
+        <div class="milestone-badge pmi" title="PMI cancels when Loan-to-Value drops below 80%">
+          <span>🚩</span>
+          <span><strong>PMI Drop-Off:</strong> Month ${summary.pmiDropMonth} (${yr} Yrs)</span>
+        </div>
+      `);
+    }
+
+    if (summary.isArm && summary.armResetMonth) {
+      milestonePills.push(`
+        <div class="milestone-badge arm" title="ARM interest rate resets from initial rate to variable reset rate">
+          <span>⚡</span>
+          <span><strong>ARM Interest Reset:</strong> Month ${summary.armResetMonth} (Yr ${summary.armFixedYears}) @ ${summary.armAdjustedRate.toFixed(2)}%</span>
+        </div>
+      `);
+    }
+
+    if (summary.isRecast && summary.recastMonth) {
+      const yr = (summary.recastMonth / 12).toFixed(1);
+      milestonePills.push(`
+        <div class="milestone-badge recast" title="Mortgage Recast: lump sum applied to lower monthly payments over remaining term">
+          <span>🔄</span>
+          <span><strong>Loan Recast:</strong> Month ${summary.recastMonth} (${yr} Yrs) - $${Math.round(summary.recastAmount / 1000)}k Lump Sum</span>
+        </div>
+      `);
+    }
+
+    if (summary.acceleratedPayoffMonth) {
+      const yr = (summary.acceleratedPayoffMonth / 12).toFixed(1);
+      milestonePills.push(`
+        <div class="milestone-badge payoff" title="Loan is 100% paid off early via extra principal payments">
+          <span>🏁</span>
+          <span><strong>Accelerated Payoff:</strong> Month ${summary.acceleratedPayoffMonth} (${yr} Yrs)</span>
+        </div>
+      `);
+    }
   }
 
   if (milestonePills.length > 0) {
@@ -888,11 +1113,180 @@ function setZoomPreset(preset) {
   renderChart();
 }
 
+function setChartViewPreset(view) {
+  activeChartView = view || 'balance';
+  const viewButtons = document.querySelectorAll('.btn-chart-view');
+  viewButtons.forEach(b => {
+    if (b.getAttribute('data-view') === activeChartView) {
+      b.classList.add('active');
+    } else {
+      b.classList.remove('active');
+    }
+  });
+  renderChart();
+}
+
+function getActiveChartView() {
+  return activeChartView;
+}
+
+function isMobileViewport() {
+  return typeof window !== 'undefined' && (window.innerWidth <= 768 || (window.matchMedia && window.matchMedia('(max-width: 768px)').matches));
+}
+
+function getMaxCompareCount() {
+  return isMobileViewport() ? 2 : 4;
+}
+
+function getCompareMode() {
+  return isCompareMode;
+}
+
+function getCompareSelectedIds() {
+  return compareSelectedIds;
+}
+
+function setCompareSelectedIds(ids) {
+  compareSelectedIds = ids || [];
+  if (isCompareMode) {
+    renderCompareControls();
+    renderChart();
+  }
+}
+
+function toggleCompareMode(forceState) {
+  isCompareMode = typeof forceState === 'boolean' ? forceState : !isCompareMode;
+  const btnToggle = document.getElementById('btn-toggle-compare');
+  const compareBar = document.getElementById('compare-scenarios-bar');
+
+  if (btnToggle) {
+    if (isCompareMode) {
+      btnToggle.classList.add('active');
+    } else {
+      btnToggle.classList.remove('active');
+    }
+  }
+
+  if (compareBar) {
+    compareBar.style.display = isCompareMode ? 'flex' : 'none';
+  }
+
+  if (isCompareMode) {
+    const saved = getSavedScenarios();
+    const maxAllowed = getMaxCompareCount();
+    if (compareSelectedIds.length === 0 && saved.length > 0) {
+      compareSelectedIds = saved.slice(0, maxAllowed).map(s => s.id);
+    } else {
+      const validIds = compareSelectedIds.filter(id => saved.some(s => s.id === id));
+      compareSelectedIds = validIds.slice(0, maxAllowed);
+    }
+    renderCompareControls();
+  }
+
+  renderChart();
+}
+
+function renderCompareControls() {
+  const chipsGrid = document.getElementById('compare-chips-grid');
+  const countBadge = document.getElementById('compare-count-badge');
+  const limitLabel = document.getElementById('compare-limit-label');
+  if (!chipsGrid) return;
+
+  const maxAllowed = getMaxCompareCount();
+  if (limitLabel) {
+    limitLabel.textContent = `(Select 2–${maxAllowed} scenarios${isMobileViewport() ? ', max 2 on mobile' : ''})`;
+  }
+
+  const savedScenarios = getSavedScenarios();
+
+  if (savedScenarios.length < 2) {
+    chipsGrid.innerHTML = `
+      <div class="compare-empty-state">
+        <span><i class="fa-solid fa-triangle-exclamation"></i> Compare Mode requires at least 2 saved scenarios. Save your current setup as a scenario to compare!</span>
+        <button type="button" id="btn-quick-save-compare" class="btn btn-xs btn-primary">
+          <i class="fa-solid fa-bookmark"></i> Save Current Setup
+        </button>
+      </div>
+    `;
+    const btnQuickSave = document.getElementById('btn-quick-save-compare');
+    if (btnQuickSave) {
+      btnQuickSave.addEventListener('click', () => {
+        openSaveScenarioModal();
+      });
+    }
+    if (countBadge) countBadge.textContent = `0 / ${maxAllowed} selected`;
+    return;
+  }
+
+  if (compareSelectedIds.length > maxAllowed) {
+    compareSelectedIds = compareSelectedIds.slice(0, maxAllowed);
+  }
+
+  chipsGrid.innerHTML = '';
+  const isLimitReached = compareSelectedIds.length >= maxAllowed;
+
+  savedScenarios.forEach((scen, idx) => {
+    const isSelected = compareSelectedIds.includes(scen.id);
+    const colorObj = COMPARE_SCENARIO_COLORS[idx % COMPARE_SCENARIO_COLORS.length];
+    const isLight = typeof document !== 'undefined' && document.documentElement && document.documentElement.getAttribute('data-theme') === 'light';
+    const isChipDisabled = !isSelected && isLimitReached;
+
+    const state = scen.state || {};
+    const priceStr = state.homePrice ? `$${Math.round(state.homePrice / 1000)}k` : '';
+    const rateStr = state.interestRate ? `${state.interestRate}%` : '';
+    const termStr = state.loanTerm ? `${state.loanTerm}Y` : '';
+    const metricsStr = [priceStr, termStr, rateStr].filter(Boolean).join(' | ');
+
+    const chipEl = document.createElement('div');
+    chipEl.className = `compare-chip ${isSelected ? 'selected' : ''} ${isChipDisabled ? 'disabled' : ''}`;
+
+    if (isSelected) {
+      chipEl.style.setProperty('--chip-color', isLight ? colorObj.lightColor : colorObj.color);
+      chipEl.style.setProperty('--chip-bg', colorObj.bg);
+      chipEl.style.setProperty('--chip-bg-light', colorObj.bgLight);
+    }
+
+    chipEl.innerHTML = `
+      <div class="compare-chip-top">
+        <div class="compare-chip-name">
+          <span class="compare-chip-color-dot" style="background-color: ${isLight ? colorObj.lightColor : colorObj.color};"></span>
+          <span>${scen.name}</span>
+        </div>
+        <input type="checkbox" class="compare-chip-checkbox" data-id="${scen.id}" ${isSelected ? 'checked' : ''} ${isChipDisabled ? 'disabled' : ''}>
+      </div>
+      <div class="compare-chip-metrics">
+        <span>${metricsStr || 'Custom Parameters'}</span>
+        ${state.isArmLoan ? '<span class="text-warning" style="font-weight: 600;">(ARM)</span>' : ''}
+      </div>
+    `;
+
+    chipEl.addEventListener('click', (e) => {
+      if (isChipDisabled && !isSelected) return;
+
+      if (isSelected) {
+        compareSelectedIds = compareSelectedIds.filter(id => id !== scen.id);
+      } else {
+        if (compareSelectedIds.length < maxAllowed) {
+          compareSelectedIds.push(scen.id);
+        }
+      }
+      renderCompareControls();
+      renderChart();
+    });
+
+    chipsGrid.appendChild(chipEl);
+  });
+
+  if (countBadge) {
+    countBadge.textContent = `${compareSelectedIds.length} / ${maxAllowed} selected`;
+  }
+}
+
 function renderChart() {
   const chartCanvas = document.getElementById('payoff-chart');
   if (!chartCanvas) return;
   const ctx = chartCanvas.getContext('2d');
-  
+
   if (chartInstance) {
     chartInstance.destroy();
   }
@@ -906,17 +1300,19 @@ function renderChart() {
   const acceleratedData = currentSchedule.accelerated || [];
   const summary = currentSchedule.summary || {};
 
-  const fullMaxMonths = Math.max(standardData.length, acceleratedData.length);
-  
+  const fullMaxMonths = Math.max(standardData.length, acceleratedData.length, 12);
+
   let targetMaxMonths = fullMaxMonths;
   if (activeZoomPreset === '5Y') targetMaxMonths = Math.min(60, fullMaxMonths);
   else if (activeZoomPreset === '10Y') targetMaxMonths = Math.min(120, fullMaxMonths);
   else if (activeZoomPreset === '15Y') targetMaxMonths = Math.min(180, fullMaxMonths);
 
-  const sampleStep = Math.max(1, Math.round(targetMaxMonths / 25));
+  const sampleStep = activeChartView === 'annual'
+    ? 12
+    : Math.max(1, Math.round(targetMaxMonths / 30));
+
   const sampledMonthSet = new Set();
-  
-  for (let m = 0; m <= targetMaxMonths; m += sampleStep) {
+  for (let m = activeChartView === 'annual' ? 12 : 0; m <= targetMaxMonths; m += sampleStep) {
     sampledMonthSet.add(m);
   }
   sampledMonthSet.add(targetMaxMonths);
@@ -927,6 +1323,9 @@ function renderChart() {
   if (summary.armResetMonth && summary.armResetMonth <= targetMaxMonths) {
     sampledMonthSet.add(summary.armResetMonth);
   }
+  if (summary.recastMonth && summary.recastMonth <= targetMaxMonths) {
+    sampledMonthSet.add(summary.recastMonth);
+  }
   if (summary.acceleratedPayoffMonth && summary.acceleratedPayoffMonth <= targetMaxMonths) {
     sampledMonthSet.add(summary.acceleratedPayoffMonth);
   }
@@ -934,48 +1333,195 @@ function renderChart() {
   const sortedMonths = Array.from(sampledMonthSet).sort((a, b) => a - b);
 
   const labels = [];
-  const standardBalanceDataset = [];
-  const acceleratedBalanceDataset = [];
-  const standardInterestDataset = [];
-  const acceleratedInterestDataset = [];
-
   const today = new Date();
   const startYear = today.getFullYear();
   const startMonth = today.getMonth() + 1;
 
   sortedMonths.forEach(m => {
-    const date = new Date(startYear, startMonth + m, 1);
-    const label = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-    labels.push(label);
-
-    const stdPoint = standardData.find(item => item.month === m) || 
-                     (m > standardData.length ? standardData[standardData.length - 1] : null);
-    
-    if (stdPoint) {
-      standardBalanceDataset.push(stdPoint.endingBalance);
-      standardInterestDataset.push(stdPoint.cumulativeInterest);
-    } else if (m === 0) {
-      standardBalanceDataset.push(summary.principal || 0);
-      standardInterestDataset.push(0);
+    if (activeChartView === 'annual') {
+      const yearNum = Math.ceil(m / 12);
+      labels.push(`Year ${yearNum}`);
     } else {
-      standardBalanceDataset.push(0);
-      standardInterestDataset.push(summary.standardTotalInterest || 0);
-    }
-
-    const accPoint = acceleratedData.find(item => item.month === m) ||
-                     (m > acceleratedData.length ? acceleratedData[acceleratedData.length - 1] : null);
-
-    if (accPoint) {
-      acceleratedBalanceDataset.push(accPoint.endingBalance);
-      acceleratedInterestDataset.push(accPoint.cumulativeInterest);
-    } else if (m === 0) {
-      acceleratedBalanceDataset.push(summary.principal || 0);
-      acceleratedInterestDataset.push(0);
-    } else {
-      acceleratedBalanceDataset.push(0);
-      acceleratedInterestDataset.push(summary.acceleratedTotalInterest || 0);
+      const date = new Date(startYear, startMonth + m, 1);
+      labels.push(date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }));
     }
   });
+
+  let chartType = 'line';
+  let datasets = [];
+
+  const createGradient = (colorStart, colorEnd) => {
+    if (typeof ctx.createLinearGradient === 'function') {
+      const gradient = ctx.createLinearGradient(0, 0, 0, 350);
+      if (gradient && gradient.addColorStop) {
+        gradient.addColorStop(0, colorStart);
+        gradient.addColorStop(1, colorEnd);
+        return gradient;
+      }
+    }
+    return colorStart;
+  };
+
+  if (activeChartView === 'balance') {
+    chartType = 'line';
+    const accBalancePoints = [];
+    const stdBalancePoints = [];
+
+    sortedMonths.forEach(m => {
+      const accPoint = acceleratedData.find(item => item.month === m) ||
+        (m > acceleratedData.length ? acceleratedData[acceleratedData.length - 1] : null);
+      const stdPoint = standardData.find(item => item.month === m) ||
+        (m > standardData.length ? standardData[standardData.length - 1] : null);
+
+      accBalancePoints.push(accPoint ? accPoint.endingBalance : (m === 0 ? (summary.principal || 0) : 0));
+      stdBalancePoints.push(stdPoint ? stdPoint.endingBalance : (m === 0 ? (summary.principal || 0) : 0));
+    });
+
+    const accGradient = createGradient(
+      isLight ? 'rgba(16, 185, 129, 0.25)' : 'rgba(16, 185, 129, 0.35)',
+      isLight ? 'rgba(16, 185, 129, 0.01)' : 'rgba(16, 185, 129, 0.01)'
+    );
+
+    datasets = [
+      {
+        label: 'Accelerated Balance',
+        data: accBalancePoints,
+        borderColor: '#10b981',
+        backgroundColor: accGradient,
+        fill: true,
+        tension: 0.25,
+        borderWidth: 3,
+        pointRadius: 0,
+        pointHoverRadius: 6
+      },
+      {
+        label: 'Standard Balance',
+        data: stdBalancePoints,
+        borderColor: isLight ? '#4f46e5' : '#6366f1',
+        backgroundColor: 'transparent',
+        fill: false,
+        tension: 0.25,
+        borderWidth: 2,
+        borderDash: [5, 5],
+        pointRadius: 0,
+        pointHoverRadius: 5
+      }
+    ];
+  } else if (activeChartView === 'interest') {
+    chartType = 'line';
+    const accInterestPoints = [];
+    const stdInterestPoints = [];
+
+    sortedMonths.forEach(m => {
+      const accPoint = acceleratedData.find(item => item.month === m) ||
+        (m > acceleratedData.length ? acceleratedData[acceleratedData.length - 1] : null);
+      const stdPoint = standardData.find(item => item.month === m) ||
+        (m > standardData.length ? standardData[standardData.length - 1] : null);
+
+      accInterestPoints.push(accPoint ? accPoint.cumulativeInterest : (m === 0 ? 0 : (summary.acceleratedTotalInterest || 0)));
+      stdInterestPoints.push(stdPoint ? stdPoint.cumulativeInterest : (m === 0 ? 0 : (summary.standardTotalInterest || 0)));
+    });
+
+    const interestGradient = createGradient(
+      isLight ? 'rgba(245, 158, 11, 0.25)' : 'rgba(245, 158, 11, 0.35)',
+      isLight ? 'rgba(245, 158, 11, 0.01)' : 'rgba(245, 158, 11, 0.01)'
+    );
+
+    datasets = [
+      {
+        label: 'Accelerated Cumulative Interest',
+        data: accInterestPoints,
+        borderColor: '#f59e0b',
+        backgroundColor: interestGradient,
+        fill: true,
+        tension: 0.25,
+        borderWidth: 3,
+        pointRadius: 0,
+        pointHoverRadius: 6
+      },
+      {
+        label: 'Standard Cumulative Interest',
+        data: stdInterestPoints,
+        borderColor: '#ef4444',
+        backgroundColor: 'transparent',
+        fill: false,
+        tension: 0.25,
+        borderWidth: 2,
+        borderDash: [5, 5],
+        pointRadius: 0,
+        pointHoverRadius: 5
+      }
+    ];
+  } else if (activeChartView === 'monthly') {
+    chartType = 'bar';
+    const principalPoints = [];
+    const interestPoints = [];
+    const escrowPoints = [];
+
+    sortedMonths.forEach(m => {
+      const accPoint = acceleratedData.find(item => item.month === m);
+      if (accPoint) {
+        principalPoints.push(accPoint.principalPaid);
+        interestPoints.push(accPoint.interestPaid);
+        escrowPoints.push(accPoint.taxInsurancePmi || 0);
+      } else {
+        principalPoints.push(0);
+        interestPoints.push(0);
+        escrowPoints.push(0);
+      }
+    });
+
+    datasets = [
+      {
+        label: 'Principal Payment',
+        data: principalPoints,
+        backgroundColor: '#10b981',
+        borderRadius: 4
+      },
+      {
+        label: 'Interest Payment',
+        data: interestPoints,
+        backgroundColor: '#ef4444',
+        borderRadius: 4
+      },
+      {
+        label: 'Tax, Insurance & Escrow',
+        data: escrowPoints,
+        backgroundColor: '#0ea5e9',
+        borderRadius: 4
+      }
+    ];
+  } else if (activeChartView === 'annual') {
+    chartType = 'bar';
+    const annualPrincipal = [];
+    const annualInterest = [];
+
+    sortedMonths.forEach(m => {
+      const yearStartMonth = Math.max(1, m - 11);
+      const yearPoints = acceleratedData.filter(item => item.month >= yearStartMonth && item.month <= m);
+
+      const yrP = yearPoints.reduce((sum, item) => sum + (item.principalPaid || 0), 0);
+      const yrI = yearPoints.reduce((sum, item) => sum + (item.interestPaid || 0), 0);
+
+      annualPrincipal.push(yrP);
+      annualInterest.push(yrI);
+    });
+
+    datasets = [
+      {
+        label: 'Annual Principal Paid',
+        data: annualPrincipal,
+        backgroundColor: '#10b981',
+        borderRadius: 4
+      },
+      {
+        label: 'Annual Interest Paid',
+        data: annualInterest,
+        backgroundColor: '#f59e0b',
+        borderRadius: 4
+      }
+    ];
+  }
 
   const milestoneFlagsPlugin = {
     id: 'milestoneFlagsPlugin',
@@ -1003,7 +1549,15 @@ function renderChart() {
           month: summary.armResetMonth,
           label: `⚡ ARM Reset (${summary.armAdjustedRate.toFixed(1)}%)`,
           color: '#f59e0b',
-          bgColor: isLight ? '#fffbebf' : 'rgba(245, 158, 11, 0.2)'
+          bgColor: isLight ? '#fffbeb' : 'rgba(245, 158, 11, 0.2)'
+        });
+      }
+      if (summary.isRecast && summary.recastMonth && summary.recastMonth <= targetMaxMonths) {
+        activeMilestones.push({
+          month: summary.recastMonth,
+          label: `🔄 Recast`,
+          color: '#0ea5e9',
+          bgColor: isLight ? '#f0f9ff' : 'rgba(14, 165, 233, 0.2)'
         });
       }
       if (summary.acceleratedPayoffMonth && summary.acceleratedPayoffMonth <= targetMaxMonths) {
@@ -1018,7 +1572,8 @@ function renderChart() {
       if (activeMilestones.length === 0) return;
 
       ctx.save();
-      activeMilestones.forEach((ms, idx) => {
+      const drawnPills = [];
+      activeMilestones.forEach(ms => {
         const pointIdx = sortedMonths.indexOf(ms.month);
         if (pointIdx === -1) return;
 
@@ -1039,10 +1594,22 @@ function renderChart() {
         const pillPaddingH = 6;
         const pillHeight = 18;
         const pillWidth = textWidth + (pillPaddingH * 2);
-        
-        const pillY = top + 6 + (idx * 22);
+
+        let stackLevel = 0;
+        drawnPills.forEach(dp => {
+          if (Math.abs(dp.xPos - xPos) < 75) {
+            stackLevel = Math.max(stackLevel, dp.stackLevel + 1);
+          }
+        });
+
+        let pillY = top + 6 + (stackLevel * 22);
+        if (pillY + pillHeight > bottom - 10) {
+          pillY = bottom - pillHeight - 6;
+        }
         let pillX = xPos - (pillWidth / 2);
         pillX = Math.max(left + 2, Math.min(pillX, right - pillWidth - 2));
+
+        drawnPills.push({ xPos, stackLevel });
 
         ctx.fillStyle = ms.bgColor;
         ctx.strokeStyle = ms.color;
@@ -1066,62 +1633,19 @@ function renderChart() {
   };
 
   chartInstance = new Chart(ctx, {
-    type: 'line',
+    type: chartType,
     data: {
       labels: labels,
-      datasets: [
-        {
-          label: 'Accelerated Principal Balance',
-          data: acceleratedBalanceDataset,
-          borderColor: '#10b981',
-          backgroundColor: 'transparent',
-          fill: false,
-          tension: 0.25,
-          borderWidth: 3,
-          pointRadius: 0,
-          pointHoverRadius: 5
-        },
-        {
-          label: 'Standard Principal Balance',
-          data: standardBalanceDataset,
-          borderColor: isLight ? '#4f46e5' : '#6366f1',
-          backgroundColor: 'transparent',
-          fill: false,
-          tension: 0.25,
-          borderWidth: 2,
-          borderDash: [5, 5],
-          pointRadius: 0,
-          pointHoverRadius: 4
-        },
-        {
-          label: 'Accelerated Cumulative Interest',
-          data: acceleratedInterestDataset,
-          borderColor: '#f59e0b',
-          backgroundColor: 'transparent',
-          fill: false,
-          tension: 0.25,
-          borderWidth: 3,
-          pointRadius: 0,
-          pointHoverRadius: 5
-        },
-        {
-          label: 'Standard Cumulative Interest',
-          data: standardInterestDataset,
-          borderColor: '#ef4444',
-          backgroundColor: 'transparent',
-          fill: false,
-          tension: 0.25,
-          borderWidth: 2,
-          borderDash: [5, 5],
-          pointRadius: 0,
-          pointHoverRadius: 4
-        }
-      ]
+      datasets: datasets
     },
     plugins: [milestoneFlagsPlugin],
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
       plugins: {
         legend: {
           position: 'top',
@@ -1132,26 +1656,11 @@ function renderChart() {
               size: 11
             }
           }
-        },
-        tooltip: {
-          mode: 'index',
-          intersect: false,
-          callbacks: {
-            label: function(context) {
-              let label = context.dataset.label || '';
-              if (label) {
-                label += ': ';
-              }
-              if (context.parsed.y !== null) {
-                label += formatCurrency(context.parsed.y);
-              }
-              return label;
-            }
-          }
         }
       },
       scales: {
         x: {
+          stacked: (activeChartView === 'monthly' || activeChartView === 'annual'),
           grid: {
             color: chartGridColor
           },
@@ -1164,6 +1673,7 @@ function renderChart() {
           }
         },
         y: {
+          stacked: (activeChartView === 'monthly' || activeChartView === 'annual'),
           grid: {
             color: chartGridColor
           },
@@ -1173,7 +1683,10 @@ function renderChart() {
               family: 'Plus Jakarta Sans',
               size: 10
             },
-            callback: function(value) {
+            callback: function (value) {
+              if (activeChartView === 'monthly') {
+                return '$' + Math.round(value);
+              }
               return '$' + (value / 1000).toFixed(0) + 'k';
             }
           }
@@ -1189,7 +1702,7 @@ function renderChart() {
 function getAnnualSchedule() {
   const data = currentSchedule.accelerated;
   const annual = [];
-  
+
   let currentYear = 1;
   let yearStartingBalance = data.length > 0 ? data[0].startingBalance : 0;
   let yearBasePayment = 0;
@@ -1233,7 +1746,7 @@ function getAnnualSchedule() {
  */
 function renderTable() {
   elScheduleTbody.innerHTML = '';
-  
+
   const isAnnual = activeTableViewMode === 'annual';
   let data = [];
 
@@ -1256,7 +1769,7 @@ function renderTable() {
     const totalPages = Math.ceil(data.length / rowsPerPage);
     // Clamp current page
     currentTablePage = Math.max(1, Math.min(currentTablePage, totalPages));
-    
+
     // Update pagination controls
     elBtnPrevPage.disabled = currentTablePage === 1;
     elBtnNextPage.disabled = currentTablePage === totalPages;
@@ -1269,10 +1782,10 @@ function renderTable() {
   // Render rows
   displayData.forEach(row => {
     const tr = document.createElement('tr');
-    
+
     // Label (Month X or Year Y)
     const label = isAnnual ? `Year ${row.year}` : `Month ${row.month}`;
-    
+
     // Check if extra payment was made
     const extraClass = row.extraPayment > 0 ? 'text-success font-semibold' : 'text-muted';
 
@@ -1296,16 +1809,16 @@ function renderTable() {
 function exportScheduleToCSV() {
   const isAnnual = activeTableViewMode === 'annual';
   const data = isAnnual ? getAnnualSchedule() : currentSchedule.accelerated;
-  
+
   if (data.length === 0) return;
 
   let csvContent = "data:text/csv;charset=utf-8,";
-  
+
   // Headers
-  const headers = isAnnual 
+  const headers = isAnnual
     ? ["Year", "Starting Balance", "Base P&I Payment", "Extra Principal Payment", "Interest Paid", "Principal Paid", "Ending Balance"]
     : ["Month", "Starting Balance", "Scheduled P&I Payment", "Extra Payment Applied", "Interest Paid", "Principal Paid", "Ending Balance"];
-    
+
   csvContent += headers.join(",") + "\n";
 
   // Rows
@@ -1370,6 +1883,9 @@ function serializeCurrentState() {
     scheduledOneTimePayments: scheduledOneTimePayments,
     oneTimeExtra: getTotalLumpSumAmount(scheduledOneTimePayments),
     oneTimeMonth: scheduledOneTimePayments.length > 0 ? scheduledOneTimePayments[0].month : 12,
+    isRecastEnabled: elEnableRecast ? elEnableRecast.checked : false,
+    recastAmount: parseFloat(elRecastAmount ? elRecastAmount.value : 50000) || 50000,
+    recastMonth: parseInt(elRecastMonth ? elRecastMonth.value : 60) || 60,
     propertyTax: parseFloat(elPropertyTax.value) || 0,
     homeInsurance: parseFloat(elHomeInsurance.value) || 0,
     takeHomeSalary: parseFloat(elTakeHomeSalary.value) || 0,
@@ -1435,6 +1951,20 @@ function applyStateObject(state) {
     scheduledOneTimePayments = amt > 0 ? [{ id: 'default-1', amount: amt, month: mo }] : [];
   }
   renderOneTimePaymentsList();
+  if (state.isRecastEnabled !== undefined && elEnableRecast) {
+    elEnableRecast.checked = !!state.isRecastEnabled;
+    if (elRecastCardBody) {
+      elRecastCardBody.style.display = elEnableRecast.checked ? 'flex' : 'none';
+    }
+  }
+  if (state.recastAmount !== undefined && elRecastAmount) {
+    elRecastAmount.value = state.recastAmount;
+    if (elRecastAmountSlider) elRecastAmountSlider.value = state.recastAmount;
+  }
+  if (state.recastMonth !== undefined && elRecastMonth) {
+    elRecastMonth.value = state.recastMonth;
+    if (elRecastMonthSlider) elRecastMonthSlider.value = state.recastMonth;
+  }
   if (state.propertyTax !== undefined) {
     elPropertyTax.value = state.propertyTax;
     elPropertyTaxSlider.value = state.propertyTax;
@@ -1528,16 +2058,16 @@ function renderScenarioOptions() {
   scenarios.forEach(scen => {
     const opt = document.createElement('option');
     opt.value = scen.id;
-    
+
     let text = scen.name;
     if (scen.comments && scen.comments.trim()) {
-      const snippet = scen.comments.trim().length > 30 
-        ? scen.comments.trim().substring(0, 27) + '...' 
+      const snippet = scen.comments.trim().length > 30
+        ? scen.comments.trim().substring(0, 27) + '...'
         : scen.comments.trim();
       text += ` — "${snippet}"`;
     }
     text += ` (${scen.dateStr || 'Saved'})`;
-    
+
     opt.textContent = text;
     if (scen.comments) {
       opt.title = `${scen.name}\nNotes: ${scen.comments}`;
@@ -1555,6 +2085,10 @@ function renderScenarioOptions() {
   }
 
   updateScenarioCommentsBanner(activeScenObj);
+
+  if (isCompareMode) {
+    renderCompareControls();
+  }
 }
 
 function saveScenario(name, comments = '') {
@@ -1637,6 +2171,10 @@ function recalculate() {
   const armFixedYears = parseFloat(elArmFixedTerm ? elArmFixedTerm.value : 5) || 5;
   const armAdjustedRate = parseFloat(elArmAdjustedRate ? elArmAdjustedRate.value : 7.5) || 7.5;
 
+  const isRecast = elEnableRecast ? elEnableRecast.checked : false;
+  const recastAmount = parseFloat(elRecastAmount ? elRecastAmount.value : 50000) || 50000;
+  const recastMonth = parseInt(elRecastMonth ? elRecastMonth.value : 60) || 60;
+
   currentSchedule = calculateAmortizationSchedules(
     homePrice,
     downPayment,
@@ -1647,7 +2185,11 @@ function recalculate() {
     oneTimeMonth,
     isArm,
     armFixedYears,
-    armAdjustedRate
+    armAdjustedRate,
+    scheduledOneTimePayments,
+    isRecast,
+    recastAmount,
+    recastMonth
   );
 
   updateUI();
@@ -1678,6 +2220,39 @@ let eventHandlersInitialized = false;
 function setupEventHandlers() {
   if (eventHandlersInitialized) return;
   eventHandlersInitialized = true;
+
+  // Compare Scenarios Mode Toggle
+  const btnToggleCompare = document.getElementById('btn-toggle-compare');
+  if (btnToggleCompare) {
+    btnToggleCompare.addEventListener('click', () => {
+      toggleCompareMode();
+    });
+  }
+
+  // Recast Control Sync
+  if (elEnableRecast) {
+    elEnableRecast.addEventListener('change', () => {
+      if (elRecastCardBody) {
+        elRecastCardBody.style.display = elEnableRecast.checked ? 'flex' : 'none';
+      }
+      recalculate();
+    });
+  }
+  if (elRecastAmount && elRecastAmountSlider) {
+    linkSliderAndInput(elRecastAmount, elRecastAmountSlider);
+  }
+  if (elRecastMonth && elRecastMonthSlider) {
+    linkSliderAndInput(elRecastMonth, elRecastMonthSlider);
+  }
+
+  // Time Horizon Metric Presets
+  const viewButtons = document.querySelectorAll('.btn-chart-view');
+  viewButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const view = btn.getAttribute('data-view') || 'balance';
+      setChartViewPreset(view);
+    });
+  });
 
   // Time Horizon Zoom Presets
   const zoomButtons = document.querySelectorAll('.btn-zoom-preset');
@@ -1761,7 +2336,7 @@ function setupEventHandlers() {
     const price = parseFloat(elHomePrice.value) || 0;
     elDownPaymentSlider.max = price;
     elClosingCostsSlider.max = Math.max(100000, Math.round(price * 0.1));
-    
+
     // Recalculate down payment dollar amount based on current percent
     const pct = parseFloat(elDownPaymentPercent.value) || 0;
     const newDp = Math.min(price, Math.round(price * (pct / 100)));
@@ -1779,14 +2354,14 @@ function setupEventHandlers() {
   elClosingCosts.addEventListener('input', () => {
     const price = parseFloat(elHomePrice.value) || 0;
     let cc = parseFloat(elClosingCosts.value) || 0;
-    
+
     if (cc > price) {
       cc = price;
       elClosingCosts.value = cc;
     }
-    
+
     elClosingCostsSlider.value = cc;
-    
+
     // Update percent
     if (price > 0) {
       elClosingCostsPercent.value = ((cc / price) * 100).toFixed(1);
@@ -1800,7 +2375,7 @@ function setupEventHandlers() {
     const price = parseFloat(elHomePrice.value) || 0;
     const cc = parseFloat(elClosingCostsSlider.value) || 0;
     elClosingCosts.value = cc;
-    
+
     // Update percent
     if (price > 0) {
       elClosingCostsPercent.value = ((cc / price) * 100).toFixed(1);
@@ -1813,7 +2388,7 @@ function setupEventHandlers() {
   elClosingCostsPercent.addEventListener('input', () => {
     const price = parseFloat(elHomePrice.value) || 0;
     let pct = parseFloat(elClosingCostsPercent.value) || 0;
-    
+
     if (pct > 20) {
       pct = 20;
       elClosingCostsPercent.value = pct;
@@ -1821,7 +2396,7 @@ function setupEventHandlers() {
       pct = 0;
       elClosingCostsPercent.value = pct;
     }
-    
+
     const cc = Math.round(price * (pct / 100));
     elClosingCosts.value = cc;
     elClosingCostsSlider.value = cc;
@@ -1832,14 +2407,14 @@ function setupEventHandlers() {
   elDownPayment.addEventListener('input', () => {
     const price = parseFloat(elHomePrice.value) || 0;
     let dp = parseFloat(elDownPayment.value) || 0;
-    
+
     if (dp > price) {
       dp = price;
       elDownPayment.value = dp;
     }
-    
+
     elDownPaymentSlider.value = dp;
-    
+
     // Update percent
     if (price > 0) {
       elDownPaymentPercent.value = ((dp / price) * 100).toFixed(1);
@@ -1853,7 +2428,7 @@ function setupEventHandlers() {
     const price = parseFloat(elHomePrice.value) || 0;
     const dp = parseFloat(elDownPaymentSlider.value) || 0;
     elDownPayment.value = dp;
-    
+
     // Update percent
     if (price > 0) {
       elDownPaymentPercent.value = ((dp / price) * 100).toFixed(1);
@@ -1866,7 +2441,7 @@ function setupEventHandlers() {
   elDownPaymentPercent.addEventListener('input', () => {
     const price = parseFloat(elHomePrice.value) || 0;
     let pct = parseFloat(elDownPaymentPercent.value) || 0;
-    
+
     if (pct > 99) {
       pct = 99;
       elDownPaymentPercent.value = pct;
@@ -1874,7 +2449,7 @@ function setupEventHandlers() {
       pct = 0;
       elDownPaymentPercent.value = pct;
     }
-    
+
     const dp = Math.round(price * (pct / 100));
     elDownPayment.value = dp;
     elDownPaymentSlider.value = dp;
@@ -1982,7 +2557,7 @@ function setupEventHandlers() {
     }
 
     const extraRequired = Math.round(Math.max(0, requiredTotalPayment - originalBasePayment));
-    
+
     // Apply to UI parameters
     elExtraMonthly.value = extraRequired;
     elExtraMonthlySlider.value = extraRequired;
@@ -2140,7 +2715,7 @@ function renderPitiDonutChart(pi, tax, ins, pmi = 0) {
           legend: { display: false },
           tooltip: {
             callbacks: {
-              label: function(context) {
+              label: function (context) {
                 const val = context.raw || 0;
                 return `${context.label}: $${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
               }
@@ -2157,7 +2732,7 @@ function renderPitiDonutChart(pi, tax, ins, pmi = 0) {
   const legendGrid = document.getElementById('piti-donut-legend');
   const elDonutTotal = document.getElementById('piti-donut-total');
   const total = pi + tax + ins + pmi;
-  
+
   if (elDonutTotal) {
     elDonutTotal.textContent = formatCurrency(total);
   }
@@ -2392,6 +2967,12 @@ const GLOSSARY_TERMS = {
     category: 'payoff',
     icon: 'fa-bullseye',
     definition: 'A calculator that computes the exact extra monthly payment needed to eliminate remaining principal within your target timeline (e.g. 15 or 20 years).'
+  },
+  'recast': {
+    title: 'Mortgage Recast',
+    category: 'payoff',
+    icon: 'fa-rotate',
+    definition: 'Re-amortizing your mortgage after making a large lump-sum principal payment. The lender recalculates your lower monthly principal and interest payment based on the reduced balance while keeping your original loan term and interest rate intact.'
   }
 };
 
@@ -2404,9 +2985,9 @@ function renderGlossaryCards(filterCategory = 'all', searchQuery = '') {
 
   const entries = Object.entries(GLOSSARY_TERMS).filter(([id, data]) => {
     const matchesCategory = filterCategory === 'all' || data.category === filterCategory;
-    const matchesSearch = !query || 
-      data.title.toLowerCase().includes(query) || 
-      data.definition.toLowerCase().includes(query) || 
+    const matchesSearch = !query ||
+      data.title.toLowerCase().includes(query) ||
+      data.definition.toLowerCase().includes(query) ||
       id.toLowerCase().includes(query);
     return matchesCategory && matchesSearch;
   });
@@ -2440,7 +3021,7 @@ function renderGlossaryCards(filterCategory = 'all', searchQuery = '') {
 
 function highlightTermCard(termId) {
   if (!termId) return;
-  
+
   // Remove existing pulses
   document.querySelectorAll('.term-pulse').forEach(el => el.classList.remove('term-pulse'));
 
@@ -2857,7 +3438,7 @@ function init() {
   // Restore saved scenarios list and last active session state
   restoreCurrentState();
   renderScenarioOptions();
-  
+
   // Set up initial target principal to match initial loan principal
   const initialDp = parseFloat(elDownPayment.value) || 90000;
   elTargetPrincipal.value = (parseFloat(elHomePrice.value) || initialPrice) - initialDp;
@@ -2898,11 +3479,19 @@ export {
   setupHelpHandlers,
   setZoomPreset,
   getActiveZoomPreset,
+  setChartViewPreset,
+  getActiveChartView,
   setupAccordionHandlers,
   updateAccordionSummaries,
   updateMobileSummaryBar,
   setupOneTimePaymentsHandlers,
   renderOneTimePaymentsList,
   getScheduledOneTimePayments,
-  setScheduledOneTimePayments
+  setScheduledOneTimePayments,
+  toggleCompareMode,
+  renderCompareControls,
+  getCompareMode,
+  getCompareSelectedIds,
+  setCompareSelectedIds,
+  getMaxCompareCount
 };
