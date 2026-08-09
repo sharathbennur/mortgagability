@@ -542,7 +542,7 @@ button, input, select, textarea {
   height: 100vh;
   background: rgba(5, 8, 20, 0.75);
   backdrop-filter: blur(8px);
-  z-index: 9999;
+  z-index: 100000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3281,7 +3281,7 @@ input[type=number] {
   transform: translateX(-50%);
   width: calc(100% - 48px);
   max-width: 1440px;
-  z-index: 9999;
+  z-index: 1000;
   padding: 12px 24px;
   background: rgba(15, 23, 42, 0.94);
   backdrop-filter: blur(14px);
@@ -3617,6 +3617,186 @@ body.simple-mode #kpi-time-saved-card {
     grid-template-columns: 1fr;
   }
 }
+
+/* Compare Scenarios Modal Styling */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000;
+}
+
+[data-theme="light"] .modal-overlay {
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.modal-compare-card {
+  max-width: 1080px;
+  width: 95%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.compare-selection-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--panel-border);
+  flex-wrap: wrap;
+}
+
+.compare-selection-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.compare-selection-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.compare-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--input-bg);
+  border: 1px solid var(--panel-border);
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.compare-chip.active {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: var(--primary);
+  color: var(--primary-focus);
+}
+
+.compare-chip .chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.compare-matrix-wrapper {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: calc(80vh - 160px);
+  border-radius: var(--card-radius);
+  border: 1px solid var(--panel-border);
+}
+
+.compare-matrix-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.88rem;
+}
+
+.compare-matrix-table th,
+.compare-matrix-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--panel-border);
+  border-right: 1px solid var(--panel-border);
+  vertical-align: middle;
+}
+
+.compare-matrix-table th:last-child,
+.compare-matrix-table td:last-child {
+  border-right: none;
+}
+
+.compare-matrix-table tr:last-child td {
+  border-bottom: none;
+}
+
+.compare-matrix-table th {
+  background: var(--input-bg);
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-align: left;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.compare-matrix-table th.scenario-col-header {
+  text-align: center;
+  min-width: 180px;
+  border-top: 3px solid var(--primary);
+}
+
+.compare-matrix-table th.metric-label-col {
+  min-width: 220px;
+  position: sticky;
+  left: 0;
+  z-index: 12;
+  background: var(--panel-bg);
+}
+
+.compare-matrix-table td.metric-label-cell {
+  position: sticky;
+  left: 0;
+  z-index: 11;
+  background: var(--panel-bg);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.compare-matrix-table tr.category-header-row td {
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.compare-matrix-table td.scenario-val-cell {
+  text-align: center;
+}
+
+.compare-best-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 6px;
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: var(--success);
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+[data-theme="light"] .compare-matrix-table th.metric-label-col,
+[data-theme="light"] .compare-matrix-table td.metric-label-cell {
+  background: #ffffff;
+}
+
+[data-theme="light"] .compare-matrix-table th {
+  background: #f1f5f9;
+}
+
 
 
 

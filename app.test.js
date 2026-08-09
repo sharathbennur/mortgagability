@@ -1557,6 +1557,53 @@ describe('15. Collapsible Accordion Input Panels & Mobile Floating Summary Bar',
       expect(elTimeSaved.textContent).toBeDefined();
     });
   });
+
+  describe('23. Compare Scenarios Modal Pop-Up Tests', () => {
+    beforeEach(() => {
+      localStorage.clear();
+      appModule.closeCompareModal();
+    });
+
+    it('should open compare modal and render comparison matrix table when openCompareModal is called', () => {
+      const modal = document.getElementById('modal-compare-scenarios');
+      const wrapper = document.getElementById('compare-matrix-wrapper');
+
+      expect(modal).not.toBeNull();
+      appModule.openCompareModal();
+
+      expect(modal.style.display).toBe('flex');
+      expect(wrapper.innerHTML).toContain('Financial Metric');
+      expect(wrapper.innerHTML).toContain('Total Monthly Payment (PITI)');
+      expect(wrapper.innerHTML).toContain('Total Interest Paid');
+    });
+
+    it('should close compare modal when closeCompareModal is called or close button is clicked', () => {
+      const modal = document.getElementById('modal-compare-scenarios');
+      appModule.openCompareModal();
+      expect(modal.style.display).toBe('flex');
+
+      appModule.closeCompareModal();
+      expect(modal.style.display).toBe('none');
+
+      // Click button
+      appModule.openCompareModal();
+      const btnClose = document.getElementById('btn-close-compare-modal');
+      if (btnClose) btnClose.click();
+      expect(modal.style.display).toBe('none');
+    });
+
+    it('should render Best Value badge on scenario with lowest total interest', () => {
+      appModule.saveScenario('Standard 30Yr', 'No extra');
+
+      const elExtra = document.getElementById('extra-monthly');
+      if (elExtra) elExtra.value = '500';
+      appModule.saveScenario('Accelerated Payoff', '$500 extra');
+
+      appModule.openCompareModal();
+      const wrapper = document.getElementById('compare-matrix-wrapper');
+      expect(wrapper.innerHTML).toContain('Best Value');
+    });
+  });
 });
 
 
