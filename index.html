@@ -39,17 +39,37 @@
       <div class="top-navbar-right">
         <!-- Scenario Toolbar -->
         <div class="scenario-toolbar" id="scenario-toolbar">
-          <div class="scenario-badge-container">
-            <span class="active-badge-label">Scenario:</span>
-            <span id="active-scenario-name" class="active-scenario-name">Default Setup</span>
-          </div>
-          <div class="scenario-controls">
-            <div class="scenario-select-wrapper">
-              <i class="fa-solid fa-folder-open scenario-select-icon"></i>
-              <select id="scenario-select" class="scenario-select" aria-label="Saved Scenarios">
-                <option value="">-- Saved Scenarios --</option>
-              </select>
+          <!-- Interactive Active Scenario Switcher Pill & Dropdown (Option 1) -->
+          <div class="scenario-switcher-wrapper" id="scenario-switcher-wrapper">
+            <button type="button" id="active-scenario-pill" class="active-scenario-pill"
+              aria-label="Active Scenario Switcher" title="Switch or Manage Saved Scenarios">
+              <i class="fa-solid fa-folder-open pill-folder-icon"></i>
+              <span class="active-badge-label">Scenario:</span>
+              <span id="active-scenario-name" class="active-scenario-name">Default Setup</span>
+              <i class="fa-solid fa-chevron-down pill-arrow-icon"></i>
+            </button>
+
+            <!-- Custom Scenario Card Dropdown -->
+            <div class="scenario-dropdown-menu" id="scenario-dropdown-menu" style="display: none;">
+              <div class="scenario-dropdown-header">
+                <div class="scenario-header-title"><i class="fa-solid fa-bookmark text-primary"></i> Saved Scenarios</div>
+                <button type="button" id="btn-quick-save-dropdown" class="btn btn-xs btn-primary">
+                  <i class="fa-solid fa-plus"></i> New
+                </button>
+              </div>
+              <div class="scenario-dropdown-list" id="scenario-dropdown-list">
+                <!-- Dynamically populated scenario items -->
+              </div>
             </div>
+          </div>
+
+          <!-- Hidden Native Select for DOM State & Test Parity -->
+          <select id="scenario-select" class="scenario-select visually-hidden-select" aria-label="Saved Scenarios">
+            <option value="">-- Saved Scenarios --</option>
+          </select>
+
+          <!-- Main Toolbar Action Buttons -->
+          <div class="scenario-controls">
             <button type="button" id="btn-save-scenario" class="btn btn-sm btn-primary btn-save-scenario"
               title="Save Current State as Scenario">
               <i class="fa-solid fa-bookmark"></i>
@@ -60,10 +80,38 @@
               <i class="fa-solid fa-code-compare"></i>
               <span>Compare</span>
             </button>
-            <button type="button" id="btn-delete-scenario" class="btn btn-xs btn-outline btn-delete-scenario"
-              title="Delete Selected Scenario" disabled>
+            <button type="button" id="btn-duplicate-scenario" class="btn btn-sm btn-outline btn-duplicate-scenario hidden-btn-legacy"
+              title="Duplicate Current/Selected Scenario" style="display: none;">
+              <i class="fa-solid fa-copy"></i>
+              <span>Duplicate</span>
+            </button>
+            <button type="button" id="btn-delete-scenario" class="btn btn-xs btn-outline btn-delete-scenario hidden-btn-legacy"
+              title="Delete Selected Scenario" disabled style="display: none;">
               <i class="fa-solid fa-trash-can"></i>
             </button>
+
+            <!-- Overflow Actions Menu Button (Option 2) -->
+            <div class="scenario-overflow-wrapper" id="scenario-overflow-wrapper">
+              <button type="button" id="btn-scenario-more-actions" class="btn btn-sm btn-outline btn-overflow-trigger"
+                title="More Scenario Actions" aria-label="More Scenario Actions">
+                <i class="fa-solid fa-ellipsis-vertical"></i>
+              </button>
+              <div class="scenario-overflow-menu" id="scenario-overflow-menu" style="display: none;">
+                <button type="button" class="overflow-item" id="overflow-item-save">
+                  <i class="fa-solid fa-bookmark text-primary"></i> <span>Save New Scenario...</span>
+                </button>
+                <button type="button" class="overflow-item" id="overflow-item-duplicate">
+                  <i class="fa-solid fa-copy text-info"></i> <span>Duplicate Active Scenario</span>
+                </button>
+                <button type="button" class="overflow-item" id="overflow-item-compare">
+                  <i class="fa-solid fa-code-compare text-accent"></i> <span>Compare Scenarios Side-by-Side</span>
+                </button>
+                <div class="overflow-divider"></div>
+                <button type="button" class="overflow-item overflow-item-danger" id="overflow-item-delete">
+                  <i class="fa-solid fa-trash-can text-danger"></i> <span>Delete Active Scenario</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

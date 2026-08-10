@@ -106,6 +106,7 @@ const elKpiDiscretionarySub = document.getElementById('kpi-discretionary-sub');
 
 // Scenario & Storage DOM Elements
 const elBtnSaveScenario = document.getElementById('btn-save-scenario');
+const elBtnDuplicateScenario = document.getElementById('btn-duplicate-scenario');
 const elScenarioSelect = document.getElementById('scenario-select');
 const elBtnDeleteScenario = document.getElementById('btn-delete-scenario');
 const elActiveScenarioName = document.getElementById('active-scenario-name');
@@ -2151,6 +2152,47 @@ function updateScenarioCommentsBanner(scenario) {
   }
 }
 
+function toggleScenarioDropdown() {
+  const menu = document.getElementById('scenario-dropdown-menu');
+  const pill = document.getElementById('active-scenario-pill');
+  if (menu) {
+    const isHidden = menu.style.display === 'none';
+    closeAllScenarioMenus();
+    if (isHidden) {
+      menu.style.display = 'flex';
+      if (pill) pill.classList.add('open');
+    }
+  }
+}
+
+function closeScenarioDropdown() {
+  const menu = document.getElementById('scenario-dropdown-menu');
+  const pill = document.getElementById('active-scenario-pill');
+  if (menu) menu.style.display = 'none';
+  if (pill) pill.classList.remove('open');
+}
+
+function toggleScenarioOverflowMenu() {
+  const menu = document.getElementById('scenario-overflow-menu');
+  if (menu) {
+    const isHidden = menu.style.display === 'none';
+    closeAllScenarioMenus();
+    if (isHidden) {
+      menu.style.display = 'flex';
+    }
+  }
+}
+
+function closeScenarioOverflowMenu() {
+  const menu = document.getElementById('scenario-overflow-menu');
+  if (menu) menu.style.display = 'none';
+}
+
+function closeAllScenarioMenus() {
+  closeScenarioDropdown();
+  closeScenarioOverflowMenu();
+}
+
 function renderScenarioOptions() {
   if (!elScenarioSelect) return;
 
@@ -2186,6 +2228,83 @@ function renderScenarioOptions() {
 
   if (elBtnDeleteScenario) {
     elBtnDeleteScenario.disabled = !elScenarioSelect.value;
+  }
+
+  // Sync active scenario pill label
+  if (elActiveScenarioName) {
+    elActiveScenarioName.textContent = activeScenObj ? activeScenObj.name : 'Default Setup';
+  }
+
+  // Populate Custom Scenario Dropdown List (Option 1)
+  const elScenarioDropdownList = document.getElementById('scenario-dropdown-list');
+  if (elScenarioDropdownList) {
+    elScenarioDropdownList.innerHTML = '';
+
+    // Add Default Setup item
+    const defaultItem = document.createElement('div');
+    defaultItem.className = `scenario-dropdown-item ${!currentScenarioId ? 'active-item' : ''}`;
+    defaultItem.innerHTML = `
+      <div class="scenario-item-info">
+        <span class="scenario-item-name"><i class="fa-solid fa-house-chimney text-muted"></i> Default Setup</span>
+        <span class="scenario-item-sub">Initial parameters</span>
+      </div>
+    `;
+    defaultItem.addEventListener('click', () => {
+      currentScenarioId = null;
+      if (elScenarioSelect) elScenarioSelect.value = '';
+      if (elActiveScenarioName) elActiveScenarioName.textContent = 'Default Setup';
+      renderScenarioOptions();
+      recalculate();
+      closeScenarioDropdown();
+    });
+    elScenarioDropdownList.appendChild(defaultItem);
+
+    if (scenarios.length > 0) {
+      scenarios.forEach(scen => {
+        const item = document.createElement('div');
+        const isActive = scen.id === currentScenarioId;
+        item.className = `scenario-dropdown-item ${isActive ? 'active-item' : ''}`;
+
+        const commentsSnippet = scen.comments && scen.comments.trim()
+          ? (scen.comments.trim().length > 30 ? scen.comments.trim().substring(0, 27) + '...' : scen.comments.trim())
+          : (scen.dateStr || 'Saved');
+
+        item.innerHTML = `
+          <div class="scenario-item-info" data-id="${scen.id}">
+            <span class="scenario-item-name">${scen.name}</span>
+            <span class="scenario-item-sub">${commentsSnippet}</span>
+          </div>
+          <div class="scenario-item-actions">
+            <button type="button" class="btn-scenario-inline-dup" title="Duplicate Scenario" data-id="${scen.id}">
+              <i class="fa-solid fa-copy"></i>
+            </button>
+            <button type="button" class="btn-scenario-inline-del" title="Delete Scenario" data-id="${scen.id}">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+        `;
+
+        item.querySelector('.scenario-item-info').addEventListener('click', () => {
+          loadScenario(scen.id);
+          closeScenarioDropdown();
+        });
+
+        item.querySelector('.btn-scenario-inline-dup').addEventListener('click', (e) => {
+          e.stopPropagation();
+          duplicateScenario(scen.id);
+          closeScenarioDropdown();
+        });
+
+        item.querySelector('.btn-scenario-inline-del').addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (confirm(`Are you sure you want to delete "${scen.name}"?`)) {
+            deleteScenario(scen.id);
+          }
+        });
+
+        elScenarioDropdownList.appendChild(item);
+      });
+    }
   }
 
   updateScenarioCommentsBanner(activeScenObj);
@@ -2254,6 +2373,62 @@ function deleteScenario(id) {
   }
 
   renderScenarioOptions();
+}
+
+function duplicateScenario(idToDuplicate) {
+  const targetId = idToDuplicate || (elScenarioSelect ? elScenarioSelect.value : null) || currentScenarioId;
+  const scenarios = getSavedScenarios();
+  let baseName = 'Default Setup';
+  let baseState = serializeCurrentState();
+  let baseComments = '';
+
+  if (targetId) {
+    const found = scenarios.find(s => s.id === targetId);
+    if (found) {
+      baseName = found.name;
+      baseState = JSON.parse(JSON.stringify(found.state));
+      baseComments = found.comments || '';
+    }
+  } else if (currentScenarioId) {
+    const found = scenarios.find(s => s.id === currentScenarioId);
+    if (found) {
+      baseName = found.name;
+      baseState = JSON.parse(JSON.stringify(found.state));
+      baseComments = found.comments || '';
+    }
+  }
+
+  let dupName = `${baseName} (Copy)`;
+  let counter = 2;
+  while (scenarios.some(s => s.name === dupName)) {
+    dupName = `${baseName} (Copy ${counter})`;
+    counter++;
+  }
+
+  const newId = 'scen_' + Date.now();
+  const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+  const duplicatedScenario = {
+    id: newId,
+    name: dupName,
+    comments: baseComments,
+    dateStr: dateStr,
+    createdAt: new Date().toISOString(),
+    state: baseState
+  };
+
+  scenarios.push(duplicatedScenario);
+  saveScenariosToStorage(scenarios);
+
+  currentScenarioId = newId;
+  applyStateObject(baseState);
+  if (elActiveScenarioName) {
+    elActiveScenarioName.textContent = duplicatedScenario.name;
+  }
+  renderScenarioOptions();
+  recalculate();
+
+  return duplicatedScenario;
 }
 
 // ==========================================================================
@@ -2790,6 +2965,94 @@ function setupEventHandlers() {
       }
     });
   }
+
+  if (elBtnDuplicateScenario) {
+    elBtnDuplicateScenario.addEventListener('click', () => {
+      duplicateScenario();
+    });
+  }
+
+  const elActiveScenarioPill = document.getElementById('active-scenario-pill');
+  if (elActiveScenarioPill) {
+    elActiveScenarioPill.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleScenarioDropdown();
+    });
+  }
+
+  const elBtnQuickSaveDropdown = document.getElementById('btn-quick-save-dropdown');
+  if (elBtnQuickSaveDropdown) {
+    elBtnQuickSaveDropdown.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeScenarioDropdown();
+      if (elModalSaveScenario) {
+        elModalSaveScenario.style.display = 'flex';
+        if (elScenarioNameInput) elScenarioNameInput.focus();
+      }
+    });
+  }
+
+  const elBtnMoreActions = document.getElementById('btn-scenario-more-actions');
+  if (elBtnMoreActions) {
+    elBtnMoreActions.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleScenarioOverflowMenu();
+    });
+  }
+
+  const elOverflowSave = document.getElementById('overflow-item-save');
+  if (elOverflowSave) {
+    elOverflowSave.addEventListener('click', () => {
+      closeAllScenarioMenus();
+      if (elModalSaveScenario) {
+        elModalSaveScenario.style.display = 'flex';
+        if (elScenarioNameInput) elScenarioNameInput.focus();
+      }
+    });
+  }
+
+  const elOverflowDuplicate = document.getElementById('overflow-item-duplicate');
+  if (elOverflowDuplicate) {
+    elOverflowDuplicate.addEventListener('click', () => {
+      closeAllScenarioMenus();
+      duplicateScenario();
+    });
+  }
+
+  const elOverflowCompare = document.getElementById('overflow-item-compare');
+  if (elOverflowCompare) {
+    elOverflowCompare.addEventListener('click', () => {
+      closeAllScenarioMenus();
+      openCompareModal();
+    });
+  }
+
+  const elOverflowDelete = document.getElementById('overflow-item-delete');
+  if (elOverflowDelete) {
+    elOverflowDelete.addEventListener('click', () => {
+      closeAllScenarioMenus();
+      const id = currentScenarioId || (elScenarioSelect ? elScenarioSelect.value : null);
+      if (id) {
+        const scenarios = getSavedScenarios();
+        const found = scenarios.find(s => s.id === id);
+        const name = found ? found.name : 'this scenario';
+        if (confirm(`Are you sure you want to delete "${name}"?`)) {
+          deleteScenario(id);
+        }
+      }
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    const switcher = document.getElementById('scenario-switcher-wrapper');
+    const overflow = document.getElementById('scenario-overflow-wrapper');
+    if (switcher && !switcher.contains(e.target)) {
+      closeScenarioDropdown();
+    }
+    if (overflow && !overflow.contains(e.target)) {
+      closeScenarioOverflowMenu();
+    }
+  });
 
   if (elBtnThemeToggle) {
     elBtnThemeToggle.addEventListener('click', toggleTheme);
@@ -3880,6 +4143,7 @@ export {
   init,
   recalculate,
   saveScenario,
+  duplicateScenario,
   loadScenario,
   deleteScenario,
   getSavedScenarios,

@@ -433,6 +433,76 @@ describe('4. Stateful Scenario Management Tests', () => {
     expect(optText).toContain('5/1 ARM Strategy');
     expect(optText).toContain('Refinancing at year 5');
   });
+
+  it('should duplicate a scenario with (Copy) suffix and preserve state and parameters', () => {
+    const elHomePrice = document.getElementById('home-price');
+    elHomePrice.value = 500000;
+    const original = appModule.saveScenario('Aggressive Payoff');
+
+    const copy1 = appModule.duplicateScenario(original.id);
+    expect(copy1.name).toBe('Aggressive Payoff (Copy)');
+    expect(copy1.state.homePrice).toBe(500000);
+
+    const copy2 = appModule.duplicateScenario(original.id);
+    expect(copy2.name).toBe('Aggressive Payoff (Copy 2)');
+
+    const saved = appModule.getSavedScenarios();
+    expect(saved.length).toBe(3);
+  });
+
+  it('should duplicate current active setup when duplicate button is clicked', () => {
+    const btnDuplicate = document.getElementById('btn-duplicate-scenario');
+    if (btnDuplicate) {
+      btnDuplicate.click();
+      const saved = appModule.getSavedScenarios();
+      expect(saved.length).toBeGreaterThan(0);
+      expect(saved[saved.length - 1].name).toContain('(Copy)');
+    }
+  });
+
+  it('should render custom scenario dropdown list and switch scenarios on click (Option 1)', () => {
+    appModule.saveScenario('Scenario Alpha');
+    appModule.saveScenario('Scenario Beta');
+
+    const pill = document.getElementById('active-scenario-pill');
+    const menu = document.getElementById('scenario-dropdown-menu');
+    const list = document.getElementById('scenario-dropdown-list');
+
+    expect(pill).not.toBeNull();
+    expect(list).not.toBeNull();
+    expect(list.children.length).toBe(3); // Default Setup + Alpha + Beta
+
+    // Click pill to open dropdown
+    pill.click();
+    expect(menu.style.display).toBe('flex');
+
+    // Click Scenario Alpha info item to load it
+    const alphaItem = list.children[1].querySelector('.scenario-item-info');
+    alphaItem.click();
+
+    const activeName = document.getElementById('active-scenario-name');
+    expect(activeName.textContent).toBe('Scenario Alpha');
+  });
+
+  it('should handle overflow menu button and overflow items (Option 2)', () => {
+    const btnOverflow = document.getElementById('btn-scenario-more-actions');
+    const menuOverflow = document.getElementById('scenario-overflow-menu');
+
+    expect(btnOverflow).not.toBeNull();
+    expect(menuOverflow).not.toBeNull();
+
+    // Toggle menu
+    btnOverflow.click();
+    expect(menuOverflow.style.display).toBe('flex');
+
+    // Click overflow duplicate
+    const overflowDuplicate = document.getElementById('overflow-item-duplicate');
+    overflowDuplicate.click();
+
+    expect(menuOverflow.style.display).toBe('none');
+    const saved = appModule.getSavedScenarios();
+    expect(saved.length).toBeGreaterThan(0);
+  });
 });
 
 describe('5. Terms & Privacy Disclaimer Tests', () => {
