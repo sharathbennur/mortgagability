@@ -1384,32 +1384,36 @@ describe('15. Collapsible Accordion Input Panels & Mobile Floating Summary Bar',
   describe('19. Chart Engine Time Horizon & Preset View Tests', () => {
     it('should default to balance view perspective', () => {
       expect(appModule.getActiveChartView()).toBe('balance');
+      expect(appModule.getActiveChartViews()).toEqual(['balance']);
     });
 
-    it('should switch metric views (balance, interest, monthly, annual) and update active button UI', () => {
-      appModule.setChartViewPreset('interest');
-      expect(appModule.getActiveChartView()).toBe('interest');
+    it('should allow multi-selecting metric views (balance, interest, monthly, annual) and update active button UI', () => {
+      appModule.setChartViewPreset(['balance', 'interest']);
+      expect(appModule.getActiveChartViews()).toEqual(['balance', 'interest']);
 
+      const btnBalance = document.querySelector('.btn-chart-view[data-view="balance"]');
       const btnInterest = document.querySelector('.btn-chart-view[data-view="interest"]');
-      if (btnInterest) {
+      if (btnBalance && btnInterest) {
+        expect(btnBalance.classList.contains('active')).toBe(true);
         expect(btnInterest.classList.contains('active')).toBe(true);
       }
 
-      appModule.setChartViewPreset('monthly');
-      expect(appModule.getActiveChartView()).toBe('monthly');
+      // Toggling interest off
+      appModule.setChartViewPreset('interest');
+      expect(appModule.getActiveChartViews()).toEqual(['balance']);
 
-      appModule.setChartViewPreset('annual');
-      expect(appModule.getActiveChartView()).toBe('annual');
-
-      appModule.setChartViewPreset('balance');
-      expect(appModule.getActiveChartView()).toBe('balance');
+      // Setting single view back to balance
+      appModule.setChartViewPreset(['balance']);
+      expect(appModule.getActiveChartViews()).toEqual(['balance']);
     });
 
-    it('should trigger chart re-render when view button is clicked', () => {
-      const btnMonthly = document.querySelector('.btn-chart-view[data-view="monthly"]');
-      if (btnMonthly) {
-        btnMonthly.click();
-        expect(appModule.getActiveChartView()).toBe('monthly');
+    it('should trigger chart re-render and toggle view selection when view button is clicked', () => {
+      appModule.setChartViewPreset(['balance']);
+      const btnInterest = document.querySelector('.btn-chart-view[data-view="interest"]');
+      if (btnInterest) {
+        btnInterest.click();
+        expect(appModule.getActiveChartViews()).toContain('interest');
+        expect(appModule.getActiveChartViews()).toContain('balance');
       }
     });
   });

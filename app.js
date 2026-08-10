@@ -14,7 +14,8 @@ let activeTableViewMode = 'annual'; // 'annual' or 'monthly'
 let currentTablePage = 1;
 const rowsPerPage = 12; // 1 year of months per page for monthly view
 let activeZoomPreset = 'full'; // '5Y', '10Y', '15Y', or 'full'
-let activeChartView = 'balance'; // 'balance', 'interest', 'monthly', or 'annual'
+let activeChartViews = ['balance']; // Multi-select array of views e.g. ['balance', 'interest']
+let activeChartView = 'balance'; // Kept for backwards compatibility (returns activeChartViews[0])
 let isCompareMode = false;
 let compareSelectedIds = [];
 const COMPARE_SCENARIO_COLORS = [
@@ -1180,10 +1181,23 @@ function setZoomPreset(preset) {
 }
 
 function setChartViewPreset(view) {
-  activeChartView = view || 'balance';
+  if (Array.isArray(view)) {
+    activeChartViews = view.length > 0 ? [...view] : ['balance'];
+  } else if (typeof view === 'string') {
+    if (activeChartViews.includes(view)) {
+      if (activeChartViews.length > 1) {
+        activeChartViews = activeChartViews.filter(v => v !== view);
+      }
+    } else {
+      activeChartViews.push(view);
+    }
+  }
+  activeChartView = activeChartViews[0] || 'balance';
+
   const viewButtons = document.querySelectorAll('.btn-chart-view');
   viewButtons.forEach(b => {
-    if (b.getAttribute('data-view') === activeChartView) {
+    const v = b.getAttribute('data-view');
+    if (activeChartViews.includes(v)) {
       b.classList.add('active');
     } else {
       b.classList.remove('active');
@@ -1194,6 +1208,10 @@ function setChartViewPreset(view) {
 
 function getActiveChartView() {
   return activeChartView;
+}
+
+function getActiveChartViews() {
+  return [...activeChartViews];
 }
 
 function isMobileViewport() {
@@ -1373,12 +1391,14 @@ function renderChart() {
   else if (activeZoomPreset === '10Y') targetMaxMonths = Math.min(120, fullMaxMonths);
   else if (activeZoomPreset === '15Y') targetMaxMonths = Math.min(180, fullMaxMonths);
 
-  const sampleStep = activeChartView === 'annual'
+  const isAnnualOnly = activeChartViews.length === 1 && activeChartViews[0] === 'annual';
+
+  const sampleStep = isAnnualOnly
     ? 12
     : Math.max(1, Math.round(targetMaxMonths / 30));
 
   const sampledMonthSet = new Set();
-  for (let m = activeChartView === 'annual' ? 12 : 0; m <= targetMaxMonths; m += sampleStep) {
+  for (let m = isAnnualOnly ? 12 : 0; m <= targetMaxMonths; m += sampleStep) {
     sampledMonthSet.add(m);
   }
   sampledMonthSet.add(targetMaxMonths);
@@ -1404,7 +1424,7 @@ function renderChart() {
   const startMonth = today.getMonth() + 1;
 
   sortedMonths.forEach(m => {
-    if (activeChartView === 'annual') {
+    if (isAnnualOnly) {
       const yearNum = Math.ceil(m / 12);
       labels.push(`Year ${yearNum}`);
     } else {
@@ -1413,8 +1433,9 @@ function renderChart() {
     }
   });
 
-  let chartType = 'line';
   let datasets = [];
+  let isBarPresent = false;
+  let isLinePresent = false;
 
   const createGradient = (colorStart, colorEnd) => {
     if (typeof ctx.createLinearGradient === 'function') {
@@ -1428,8 +1449,8 @@ function renderChart() {
     return colorStart;
   };
 
-  if (activeChartView === 'balance') {
-    chartType = 'line';
+  if (activeChartViews.includes('balance')) {
+    isLinePresent = true;
     const accBalancePoints = [];
     const stdBalancePoints = [];
 
@@ -1448,8 +1469,9 @@ function renderChart() {
       isLight ? 'rgba(16, 185, 129, 0.01)' : 'rgba(16, 185, 129, 0.01)'
     );
 
-    datasets = [
+    datasets.push(
       {
+        type: 'line',
         label: 'Accelerated Balance',
         data: accBalancePoints,
         borderColor: '#10b981',
@@ -1461,6 +1483,7 @@ function renderChart() {
         pointHoverRadius: 6
       },
       {
+        type: 'line',
         label: 'Standard Balance',
         data: stdBalancePoints,
         borderColor: isLight ? '#4f46e5' : '#6366f1',
@@ -1472,9 +1495,11 @@ function renderChart() {
         pointRadius: 0,
         pointHoverRadius: 5
       }
-    ];
-  } else if (activeChartView === 'interest') {
-    chartType = 'line';
+    );
+  }
+
+  if (activeChartViews.includes('interest')) {
+    isLinePresent = true;
     const accInterestPoints = [];
     const stdInterestPoints = [];
 
@@ -1493,8 +1518,9 @@ function renderChart() {
       isLight ? 'rgba(245, 158, 11, 0.01)' : 'rgba(245, 158, 11, 0.01)'
     );
 
-    datasets = [
+    datasets.push(
       {
+        type: 'line',
         label: 'Accelerated Cumulative Interest',
         data: accInterestPoints,
         borderColor: '#f59e0b',
@@ -1506,6 +1532,7 @@ function renderChart() {
         pointHoverRadius: 6
       },
       {
+        type: 'line',
         label: 'Standard Cumulative Interest',
         data: stdInterestPoints,
         borderColor: '#ef4444',
@@ -1517,9 +1544,11 @@ function renderChart() {
         pointRadius: 0,
         pointHoverRadius: 5
       }
-    ];
-  } else if (activeChartView === 'monthly') {
-    chartType = 'bar';
+    );
+  }
+
+  if (activeChartViews.includes('monthly')) {
+    isBarPresent = true;
     const principalPoints = [];
     const interestPoints = [];
     const escrowPoints = [];
@@ -1537,28 +1566,33 @@ function renderChart() {
       }
     });
 
-    datasets = [
+    datasets.push(
       {
+        type: 'bar',
         label: 'Principal Payment',
         data: principalPoints,
         backgroundColor: '#10b981',
         borderRadius: 4
       },
       {
+        type: 'bar',
         label: 'Interest Payment',
         data: interestPoints,
         backgroundColor: '#ef4444',
         borderRadius: 4
       },
       {
+        type: 'bar',
         label: 'Tax, Insurance & Escrow',
         data: escrowPoints,
         backgroundColor: '#0ea5e9',
         borderRadius: 4
       }
-    ];
-  } else if (activeChartView === 'annual') {
-    chartType = 'bar';
+    );
+  }
+
+  if (activeChartViews.includes('annual')) {
+    isBarPresent = true;
     const annualPrincipal = [];
     const annualInterest = [];
 
@@ -1573,21 +1607,25 @@ function renderChart() {
       annualInterest.push(yrI);
     });
 
-    datasets = [
+    datasets.push(
       {
+        type: 'bar',
         label: 'Annual Principal Paid',
         data: annualPrincipal,
         backgroundColor: '#10b981',
         borderRadius: 4
       },
       {
+        type: 'bar',
         label: 'Annual Interest Paid',
         data: annualInterest,
         backgroundColor: '#f59e0b',
         borderRadius: 4
       }
-    ];
+    );
   }
+
+  const chartType = (isBarPresent && !isLinePresent) ? 'bar' : 'line';
 
   const milestoneFlagsPlugin = {
     id: 'milestoneFlagsPlugin',
@@ -1726,7 +1764,7 @@ function renderChart() {
       },
       scales: {
         x: {
-          stacked: (activeChartView === 'monthly' || activeChartView === 'annual'),
+          stacked: (isBarPresent && !isLinePresent),
           grid: {
             color: chartGridColor
           },
@@ -1739,7 +1777,7 @@ function renderChart() {
           }
         },
         y: {
-          stacked: (activeChartView === 'monthly' || activeChartView === 'annual'),
+          stacked: (isBarPresent && !isLinePresent),
           grid: {
             color: chartGridColor
           },
@@ -1750,7 +1788,7 @@ function renderChart() {
               size: 10
             },
             callback: function (value) {
-              if (activeChartView === 'monthly') {
+              if (!isLinePresent && activeChartViews.length === 1 && activeChartViews[0] === 'monthly') {
                 return '$' + Math.round(value);
               }
               return '$' + (value / 1000).toFixed(0) + 'k';
@@ -3862,6 +3900,7 @@ export {
   getActiveZoomPreset,
   setChartViewPreset,
   getActiveChartView,
+  getActiveChartViews,
   setupAccordionHandlers,
   updateAccordionSummaries,
   updateMobileSummaryBar,
