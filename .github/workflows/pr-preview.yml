@@ -1,0 +1,45 @@
+name: Pull Request Preview Pipeline
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+
+permissions:
+  checks: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  pr-preview:
+    name: Run Tests & Deploy PR Preview
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Unit Tests
+        run: npm run test
+
+      - name: Build Application
+        run: npm run build
+
+      - name: Deploy Temporary Preview Channel
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_MORTGAGE_ABILITY }}'
+          channelId: 'pr-${{ github.event.number }}'
+          projectId: mortgage-ability
+          expires: 7d
