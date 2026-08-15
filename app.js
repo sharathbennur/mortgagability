@@ -648,6 +648,57 @@ function formatCurrency(val) {
   }).format(val);
 }
 
+function updatePmiAlertBanner(monthlyPmi) {
+  const container = document.getElementById('pmi-alert-container');
+  if (!container) return;
+
+  const elHp = document.getElementById('home-price');
+  const elDp = document.getElementById('down-payment');
+  const elDpPct = document.getElementById('down-payment-percent');
+
+  const homePrice = parseFloat(elHp ? elHp.value : 0) || 450000;
+  const downPayment = parseFloat(elDp ? elDp.value : 0) || 90000;
+  const downPaymentPct = parseFloat(elDpPct ? elDpPct.value : 0) || 20;
+
+  const target20Amt = Math.round(homePrice * 0.20);
+  const shortfall = Math.max(0, target20Amt - downPayment);
+
+  if (downPaymentPct < 20.0 || downPayment < target20Amt) {
+    const formattedShortfall = formatCurrency(shortfall);
+    const formattedMonthlyPmi = formatCurrency(monthlyPmi);
+    const formattedTarget20 = formatCurrency(target20Amt);
+
+    container.innerHTML = `
+      <div class="pmi-alert-content warning">
+        <div class="pmi-alert-header">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span><strong>PMI Required</strong> (&lt; 20% Down Payment)</span>
+        </div>
+        <div class="pmi-alert-body">
+          Adds <strong>${formattedMonthlyPmi}/mo</strong> in Private Mortgage Insurance until 80% LTV is reached. Add <strong>${formattedShortfall}</strong> more down payment to eliminate PMI.
+        </div>
+        <button type="button" class="btn-set-20-dp" id="btn-set-20-dp" title="Set down payment to 20% to eliminate PMI">
+          <i class="fa-solid fa-arrow-up"></i> Set Down Payment to 20% (${formattedTarget20})
+        </button>
+      </div>
+    `;
+    container.style.display = 'block';
+  } else {
+    container.innerHTML = `
+      <div class="pmi-alert-content success">
+        <div class="pmi-alert-header">
+          <i class="fa-solid fa-circle-check"></i>
+          <span><strong>20%+ Down Payment: PMI Waived!</strong></span>
+        </div>
+        <div class="pmi-alert-body">
+          You save upfront lender insurance fees (~0.5%/yr of loan principal).
+        </div>
+      </div>
+    `;
+    container.style.display = 'block';
+  }
+}
+
 /**
  * Update UI metric cards and inputs displays.
  */
@@ -668,6 +719,9 @@ function updateUI() {
   const loanPrincipal = Math.max(0, homePrice - downPayment);
   const downPercent = homePrice > 0 ? (downPayment / homePrice) * 100 : 0;
   const monthlyPmi = (downPercent < 20 && loanPrincipal > 0) ? (loanPrincipal * 0.005) / 12 : 0;
+
+  // Update dynamic PMI Alert Banner under Down Payment input
+  updatePmiAlertBanner(monthlyPmi);
 
   const propTaxRate = parseFloat(elPropertyTax.value) || 0;
   const insRate = parseFloat(elHomeInsurance.value) || 0;
@@ -691,9 +745,11 @@ function updateUI() {
   if (elBreakdownPmiWrapper) {
     if (monthlyPmi > 0) {
       elBreakdownPmiWrapper.style.display = 'inline';
+      elBreakdownPmiWrapper.classList.add('active-pmi-highlight');
       if (elBreakdownPmi) elBreakdownPmi.textContent = formatCurrency(monthlyPmi);
     } else {
       elBreakdownPmiWrapper.style.display = 'none';
+      elBreakdownPmiWrapper.classList.remove('active-pmi-highlight');
     }
   }
 
@@ -3120,6 +3176,25 @@ function setupEventHandlers() {
     });
   }
 
+  // PMI Alert Banner Set 20% Down Payment Handler
+  const pmiAlertContainer = document.getElementById('pmi-alert-container');
+  if (pmiAlertContainer) {
+    pmiAlertContainer.addEventListener('click', (e) => {
+      const btn = e.target.closest('#btn-set-20-dp');
+      if (btn) {
+        const homePrice = parseFloat(elHomePrice.value) || 450000;
+        const target20Amt = Math.round(homePrice * 0.20);
+
+        elDownPaymentPercent.value = 20;
+        elDownPayment.value = target20Amt;
+        if (elDownPaymentSlider) elDownPaymentSlider.value = target20Amt;
+
+        recalculate();
+        autoSaveCurrentState();
+      }
+    });
+  }
+
 
 
   // Table View Toggles
@@ -3866,7 +3941,10 @@ const GLOSSARY_TERMS = {
     title: 'Estimated Closing Costs',
     category: 'loan',
     icon: 'fa-receipt',
-    definition: 'Upfront administrative fees paid at loan origination to lenders, title companies, appraisers, and local governments (typically 2% to 5% of home value).'
+    definition: 'Upfront administrative fees paid at loan origination to lenders, title companies, appraisers, and local governments (typically 2% to 5% of home value).',
+    range: '2.0% – 5.0% of home purchase price',
+    searchUrl: 'https://www.google.com/search?q=current+average+mortgage+closing+costs',
+    searchLabel: 'Search current closing cost rates on Google'
   },
   'loan-principal': {
     title: 'Loan Principal Amount',
@@ -3884,13 +3962,19 @@ const GLOSSARY_TERMS = {
     title: 'Loan Type & Structure',
     category: 'loan',
     icon: 'fa-sliders',
-    definition: 'The structure of your mortgage. Fixed-rate loans keep the exact same interest rate for 15 or 30 years. Adjustable-rate mortgages (ARMs) feature a fixed initial period before interest rates adjust periodically.'
+    definition: 'The structure of your mortgage. Fixed-rate loans keep the exact same interest rate for 15 or 30 years. Adjustable-rate mortgages (ARMs) feature a fixed initial period before interest rates adjust periodically.',
+    range: '30-Yr Fixed: 5.50% – 7.50% | 15-Yr Fixed: 4.75% – 6.75% | ARMs: 5.00% – 7.00%',
+    searchUrl: 'https://www.google.com/search?q=current+mortgage+rates+by+loan+type',
+    searchLabel: 'Search current rates by loan type on Google'
   },
   'interest-rate': {
     title: 'Interest Rate',
     category: 'loan',
     icon: 'fa-percent',
-    definition: 'The annual percentage fee charged by the lender for borrowing the principal loan balance.'
+    definition: 'The annual percentage fee charged by the lender for borrowing the principal loan balance.',
+    range: '30-Yr Fixed: 5.50% – 7.50% | 15-Yr Fixed: 4.75% – 6.75% | 5/1 ARM: 5.00% – 7.00%',
+    searchUrl: 'https://www.google.com/search?q=current+mortgage+interest+rates',
+    searchLabel: 'Search current mortgage interest rates on Google'
   },
   'loan-term': {
     title: 'Loan Term',
@@ -3902,7 +3986,10 @@ const GLOSSARY_TERMS = {
     title: 'Adjustable-Rate Mortgage (ARM)',
     category: 'arm',
     icon: 'fa-clock-rotate-left',
-    definition: 'A mortgage where the interest rate is locked for an initial fixed period (e.g. 5, 7, or 10 years) and subsequently resets periodically based on benchmark market rates.'
+    definition: 'A mortgage where the interest rate is locked for an initial fixed period (e.g. 5, 7, or 10 years) and subsequently resets periodically based on benchmark market rates.',
+    range: 'Initial Fixed Period Rate: 5.00% – 7.00% | Projected Reset Rate: 6.00% – 9.50%',
+    searchUrl: 'https://www.google.com/search?q=current+adjustable+rate+mortgage+rates',
+    searchLabel: 'Search current ARM rates on Google'
   },
   'arm-fixed-term': {
     title: 'ARM Initial Fixed Period',
@@ -3914,7 +4001,10 @@ const GLOSSARY_TERMS = {
     title: 'ARM Projected Reset Rate',
     category: 'arm',
     icon: 'fa-chart-line',
-    definition: 'The estimated annual interest rate expected to take effect after your initial fixed period ends and your loan rate adjusts to prevailing market levels.'
+    definition: 'The estimated annual interest rate expected to take effect after your initial fixed period ends and your loan rate adjusts to prevailing market levels.',
+    range: '6.00% – 9.50% (SOFR Benchmark + Lender Margin with Rate Caps)',
+    searchUrl: 'https://www.google.com/search?q=current+ARM+interest+rates+and+SOFR+margin',
+    searchLabel: 'Search current ARM reset rates on Google'
   },
   'arm-reset-payment': {
     title: 'ARM Re-Amortized Payment (Year 6+ PITI)',
@@ -3926,13 +4016,19 @@ const GLOSSARY_TERMS = {
     title: 'Property Tax Rate',
     category: 'payment',
     icon: 'fa-landmark',
-    definition: 'Annual real estate taxes levied by local municipal or county government as a percentage of property valuation.'
+    definition: 'Annual real estate taxes levied by local municipal or county government as a percentage of property valuation.',
+    range: '0.50% – 2.50% of home value annually (US national avg ~1.1%)',
+    searchUrl: 'https://www.google.com/search?q=current+average+property+tax+rate+by+state',
+    searchLabel: 'Search current property tax rates on Google'
   },
   'home-insurance': {
     title: 'Home Insurance Rate',
     category: 'payment',
     icon: 'fa-shield-halved',
-    definition: 'Annual hazard insurance premium protecting your property against damage, expressed as a percentage of home value.'
+    definition: 'Annual hazard insurance premium protecting your property against damage, expressed as a percentage of home value.',
+    range: '0.30% – 1.20% of home value annually (US national avg ~0.5%)',
+    searchUrl: 'https://www.google.com/search?q=current+average+homeowner+insurance+rates+by+state',
+    searchLabel: 'Search current home insurance rates on Google'
   },
   'piti': {
     title: 'Monthly Payment (PITI)',
@@ -3944,7 +4040,10 @@ const GLOSSARY_TERMS = {
     title: 'Private Mortgage Insurance (PMI)',
     category: 'payment',
     icon: 'fa-user-shield',
-    definition: 'Lender protection insurance required when down payment is less than 20%. Automatically cancels once your loan principal reaches 80% of original home value.'
+    definition: 'Lender protection insurance required when down payment is less than 20%. Automatically cancels once your loan principal reaches 80% of original home value.',
+    range: '0.50% – 1.50% of loan balance annually',
+    searchUrl: 'https://www.google.com/search?q=current+average+private+mortgage+insurance+rates',
+    searchLabel: 'Search current PMI rates on Google'
   },
   'take-home-salary': {
     title: 'Take-Home Salary',
@@ -4020,6 +4119,7 @@ function renderGlossaryCards(filterCategory = 'all', searchQuery = '') {
     const matchesSearch = !query ||
       data.title.toLowerCase().includes(query) ||
       data.definition.toLowerCase().includes(query) ||
+      (data.range && data.range.toLowerCase().includes(query)) ||
       id.toLowerCase().includes(query);
     return matchesCategory && matchesSearch;
   });
@@ -4042,7 +4142,22 @@ function renderGlossaryCards(filterCategory = 'all', searchQuery = '') {
         <span class="glossary-tag">${categoryLabels[data.category] || data.category}</span>
       </div>
       <div class="glossary-card-body">
-        ${data.definition}
+        <p>${data.definition}</p>
+        ${data.range ? `
+          <div class="glossary-card-range">
+            <i class="fa-solid fa-chart-line"></i>
+            <span><strong>Average Realistic Range:</strong> ${data.range}</span>
+          </div>
+        ` : ''}
+        ${data.searchUrl ? `
+          <div class="glossary-card-search">
+            <a href="${data.searchUrl}" target="_blank" rel="noopener noreferrer" class="glossary-search-link" title="Search current rates on Google in new tab">
+              <i class="fa-brands fa-google"></i>
+              <span>${data.searchLabel || 'Search current rates on Google'}</span>
+              <i class="fa-solid fa-arrow-up-right-from-square external-icon"></i>
+            </a>
+          </div>
+        ` : ''}
       </div>
     </div>
   `).join('');

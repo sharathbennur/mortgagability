@@ -283,6 +283,7 @@ describe('2. UI & Integration Tests', () => {
   });
 
   it('should apply extra payments from target term calculator when clicked', () => {
+    appModule.resetToDefaults();
     const elTargetTerm = document.getElementById('target-term');
     const elBtnApplyTarget = document.getElementById('btn-apply-target');
     const elExtraMonthly = document.getElementById('extra-monthly');
@@ -601,6 +602,28 @@ describe('7. Help & Financial Glossary System Tests', () => {
     const cards = container.querySelectorAll('.glossary-card');
     expect(cards.length).toBe(1);
     expect(cards[0].textContent).toContain('Target Term Payoff Calculator');
+  });
+
+  it('should render average realistic ranges and Google search links for rate terms in glossary cards', () => {
+    appModule.renderGlossaryCards('all', '');
+    const container = document.getElementById('modal-glossary-cards-container');
+
+    const rateTermIds = ['closing-costs', 'interest-rate', 'loan-type', 'arm-loan', 'arm-adjusted-rate', 'property-tax', 'home-insurance', 'pmi'];
+
+    rateTermIds.forEach(id => {
+      const card = container.querySelector(`[data-term-id="${id}"]`);
+      expect(card).not.toBeNull();
+
+      const rangeEl = card.querySelector('.glossary-card-range');
+      expect(rangeEl).not.toBeNull();
+      expect(rangeEl.textContent).toContain('Average Realistic Range');
+
+      const searchLink = card.querySelector('.glossary-search-link');
+      expect(searchLink).not.toBeNull();
+      expect(searchLink.getAttribute('href')).toContain('google.com/search');
+      expect(searchLink.getAttribute('target')).toBe('_blank');
+      expect(searchLink.getAttribute('rel')).toContain('noopener');
+    });
   });
 
   it('should open and close the Help & Glossary modal', () => {
@@ -1939,6 +1962,71 @@ describe('15. Collapsible Accordion Input Panels & Mobile Floating Summary Bar',
       // Reset single field interest-rate should be ignored (core field protected)
       appModule.resetSingleFieldToDefault('interest-rate');
       expect(parseFloat(elIr.value)).toBe(6.25);
+    });
+  });
+
+  describe('25. PMI Dynamic Callout Banner & Chip Highlight Tests', () => {
+    it('should render warning alert banner and highlight PMI breakdown chip when down payment is below 20%', () => {
+      appModule.resetToDefaults();
+      const elHp = document.getElementById('home-price');
+      const elDpPct = document.getElementById('down-payment-percent');
+      const elDp = document.getElementById('down-payment');
+      const elDpSlider = document.getElementById('down-payment-slider');
+
+      elHp.value = '500000';
+      elDpPct.value = '10';
+      elDp.value = '50000';
+      if (elDpSlider) elDpSlider.value = '50000';
+      elDpPct.dispatchEvent(new Event('input', { bubbles: true }));
+
+      const container = document.getElementById('pmi-alert-container');
+      expect(container).not.toBeNull();
+      expect(container.innerHTML).toContain('PMI Required');
+      expect(container.innerHTML).toContain('Set Down Payment to 20%');
+
+      const wrapper = document.getElementById('breakdown-pmi-wrapper');
+      expect(wrapper).not.toBeNull();
+      expect(wrapper.classList.contains('active-pmi-highlight')).toBe(true);
+      expect(wrapper.style.display).not.toBe('none');
+    });
+
+    it('should render success banner and remove PMI chip highlight when down payment is 20% or higher', () => {
+      appModule.resetToDefaults();
+      const elHp = document.getElementById('home-price');
+      const elDpPct = document.getElementById('down-payment-percent');
+      const elDp = document.getElementById('down-payment');
+
+      elHp.value = '500000';
+      elDpPct.value = '20';
+      elDp.value = '100000';
+      elDpPct.dispatchEvent(new Event('input', { bubbles: true }));
+
+      const container = document.getElementById('pmi-alert-container');
+      expect(container.innerHTML).toContain('PMI Waived!');
+
+      const wrapper = document.getElementById('breakdown-pmi-wrapper');
+      expect(wrapper.style.display).toBe('none');
+    });
+
+    it('should set down payment to 20% when Set Down Payment to 20% button is clicked', () => {
+      appModule.resetToDefaults();
+      const elHp = document.getElementById('home-price');
+      const elDpPct = document.getElementById('down-payment-percent');
+      const elDp = document.getElementById('down-payment');
+
+      elHp.value = '400000';
+      elDpPct.value = '15';
+      elDp.value = '60000';
+      elDpPct.dispatchEvent(new Event('input', { bubbles: true }));
+
+      const btnSet20 = document.getElementById('btn-set-20-dp');
+      expect(btnSet20).not.toBeNull();
+      btnSet20.click();
+
+      expect(parseFloat(elDpPct.value)).toBe(20);
+      expect(parseFloat(elDp.value)).toBe(80000);
+      const container = document.getElementById('pmi-alert-container');
+      expect(container.innerHTML).toContain('PMI Waived!');
     });
   });
 });

@@ -3504,6 +3504,86 @@ input[type=number] {
   font-size: 0.85rem;
   color: var(--text-secondary);
   line-height: 1.55;
+  display: flex;
+  flex-direction: column;
+}
+
+.glossary-card-body p {
+  margin: 0;
+}
+
+.glossary-card-range {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  line-height: 1.45;
+}
+
+.glossary-card-range i {
+  color: var(--primary);
+  margin-top: 2px;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+[data-theme="light"] .glossary-card-range {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+[data-theme="light"] .glossary-card-range i {
+  color: #16a34a;
+}
+
+.glossary-card-search {
+  margin-top: 10px;
+}
+
+.glossary-search-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--primary-light, #818cf8);
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  transition: all 0.2s ease;
+}
+
+.glossary-search-link:hover {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: rgba(99, 102, 241, 0.5);
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.glossary-search-link .external-icon {
+  font-size: 0.7rem;
+  opacity: 0.8;
+}
+
+[data-theme="light"] .glossary-search-link {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+[data-theme="light"] .glossary-search-link:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1e40af;
 }
 
 /* Term Pulse Animation on Info Icon Click */
@@ -4248,4 +4328,143 @@ body.simple-mode #kpi-time-saved-card {
 
 [data-theme="light"] .compare-matrix-table th {
   background: #f1f5f9;
+}
+
+/* PMI Dynamic Alert Callout Banner & Active Highlight */
+.pmi-alert-container {
+  margin-top: 10px;
+}
+
+.pmi-alert-content {
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: all 0.25s ease;
+}
+
+.pmi-alert-content.warning {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: var(--text-primary);
+}
+
+.pmi-alert-content.warning .pmi-alert-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #f59e0b;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.pmi-alert-content.success {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: var(--text-primary);
+}
+
+.pmi-alert-content.success .pmi-alert-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #10b981;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.pmi-alert-body {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
+.pmi-alert-body strong {
+  color: var(--text-primary);
+}
+
+.btn-set-20-dp {
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 5px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+}
+
+.btn-set-20-dp:hover {
+  background: rgba(245, 158, 11, 0.28);
+  border-color: #f59e0b;
+  color: #ffffff;
+}
+
+[data-theme="light"] .pmi-alert-content.warning {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #78350f;
+}
+
+[data-theme="light"] .pmi-alert-content.warning .pmi-alert-header {
+  color: #b45309;
+}
+
+[data-theme="light"] .pmi-alert-content.success {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #14532d;
+}
+
+[data-theme="light"] .pmi-alert-content.success .pmi-alert-header {
+  color: #15803d;
+}
+
+[data-theme="light"] .btn-set-20-dp {
+  background: #fef3c7;
+  border-color: #fcd34d;
+  color: #92400e;
+}
+
+[data-theme="light"] .btn-set-20-dp:hover {
+  background: #fde68a;
+  border-color: #f59e0b;
+  color: #78350f;
+}
+
+/* Approach #3: Active PMI Breakdown Chip Highlighting */
+.pmi-chip.active-pmi-highlight {
+  background: rgba(245, 158, 11, 0.18) !important;
+  border: 1px solid rgba(245, 158, 11, 0.5) !important;
+  color: #f59e0b !important;
+  animation: pmi-pulse 2.5s infinite ease-in-out;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+[data-theme="light"] .pmi-chip.active-pmi-highlight {
+  background: #fffbeb !important;
+  border-color: #fde68a !important;
+  color: #b45309 !important;
+}
+
+@keyframes pmi-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+  }
 }
