@@ -169,8 +169,19 @@ const NON_RESETTABLE_FIELDS = new Set([
 
 let currentScenarioId = null;
 
+// Default interest rates by loan preset
+const DEFAULT_PRESET_RATES = {
+  '30-fixed': 6.5,
+  '15-fixed': 5.75,
+  '5-arm': 6.0,
+  '7-arm': 6.125,
+  '10-arm': 6.25,
+  'custom': 6.5
+};
+
 // Loan structure state
 let activeLoanPreset = '30-fixed';
+let loanPresetRates = { ...DEFAULT_PRESET_RATES };
 let isArmLoan = false;
 
 // KPI Outputs
@@ -2017,13 +2028,18 @@ function saveScenariosToStorage(scenarios) {
 }
 
 function serializeCurrentState() {
+  const currentInterest = parseFloat(elInterestRate.value) || 0;
+  const rates = { ...DEFAULT_PRESET_RATES, ...loanPresetRates };
+  rates[activeLoanPreset] = currentInterest;
+
   return {
     homePrice: parseFloat(elHomePrice.value) || 0,
     downPayment: parseFloat(elDownPayment.value) || 0,
     downPaymentPercent: parseFloat(elDownPaymentPercent.value) || 0,
     closingCosts: parseFloat(elClosingCosts.value) || 0,
     closingCostsPercent: parseFloat(elClosingCostsPercent.value) || 0,
-    interestRate: parseFloat(elInterestRate.value) || 0,
+    interestRate: currentInterest,
+    loanPresetRates: rates,
     loanTerm: parseFloat(elLoanTerm.value) || 30,
     extraMonthly: parseFloat(elExtraMonthly.value) || 0,
     scheduledOneTimePayments: scheduledOneTimePayments,
@@ -2073,10 +2089,36 @@ function applyStateObject(state) {
   if (state.closingCostsPercent !== undefined) {
     elClosingCostsPercent.value = state.closingCostsPercent;
   }
-  if (state.interestRate !== undefined) {
-    elInterestRate.value = state.interestRate;
-    elInterestSlider.value = state.interestRate;
+
+  if (state.loanPresetRates && typeof state.loanPresetRates === 'object') {
+    loanPresetRates = { ...DEFAULT_PRESET_RATES, ...state.loanPresetRates };
+  } else {
+    loanPresetRates = { ...DEFAULT_PRESET_RATES };
+    if (state.activeLoanPreset && state.interestRate !== undefined) {
+      loanPresetRates[state.activeLoanPreset] = parseFloat(state.interestRate) || 6.5;
+    }
   }
+
+  if (state.activeLoanPreset) {
+    activeLoanPreset = state.activeLoanPreset;
+    const presetButtons = document.querySelectorAll('.btn-preset');
+    presetButtons.forEach(b => {
+      if (b.getAttribute('data-preset') === activeLoanPreset) {
+        b.classList.add('active');
+      } else {
+        b.classList.remove('active');
+      }
+    });
+  }
+
+  const activeRate = (loanPresetRates && loanPresetRates[activeLoanPreset] !== undefined)
+    ? loanPresetRates[activeLoanPreset]
+    : (state.interestRate !== undefined ? parseFloat(state.interestRate) : (DEFAULT_PRESET_RATES[activeLoanPreset] || 6.5));
+
+  elInterestRate.value = activeRate;
+  if (elInterestSlider) elInterestSlider.value = activeRate;
+  loanPresetRates[activeLoanPreset] = activeRate;
+
   if (state.loanTerm !== undefined) {
     elLoanTerm.value = state.loanTerm;
     elTermSlider.value = state.loanTerm;
@@ -2188,6 +2230,9 @@ function getDefaultValueForField(fieldId, currentHomePrice = 450000) {
   if (fieldId === 'down-payment') {
     return Math.round(currentHomePrice * (DEFAULT_INPUT_VALUES['down-payment-percent'] / 100));
   }
+  if (fieldId === 'interest-rate') {
+    return DEFAULT_PRESET_RATES[activeLoanPreset] !== undefined ? DEFAULT_PRESET_RATES[activeLoanPreset] : 6.5;
+  }
   return DEFAULT_INPUT_VALUES[fieldId];
 }
 
@@ -2211,11 +2256,15 @@ function resetToDefaults() {
   const defaultClosingCostsPct = DEFAULT_INPUT_VALUES['closing-costs-percent'];
   const defaultClosingCostsAmt = Math.round(currentHomePrice * (defaultClosingCostsPct / 100));
 
+  loanPresetRates = { ...DEFAULT_PRESET_RATES };
+  loanPresetRates['30-fixed'] = currentInterestRate;
+
   const defaultState = {
     homePrice: currentHomePrice,
     downPayment: currentDownPayment,
     downPaymentPercent: currentDownPaymentPercent,
     interestRate: currentInterestRate,
+    loanPresetRates: { ...loanPresetRates },
     takeHomeSalary: currentTakeHomeSalary,
     monthlyExpenses: currentMonthlyExpenses,
 
@@ -2286,7 +2335,7 @@ function updateFieldModifiedIndicators() {
 
     const currentVal = parseFloat(el.value);
     const defaultVal = getDefaultValueForField(field.id, currentHomePrice);
-    let isModified = Math.abs((isNaN(currentVal) ? 0 : currentVal) - defaultVal) > 0.5;
+    let isModified = Math.abs((isNaN(currentVal) ? 0 : currentVal) - defaultVal) > 0.005;
 
     if (field.pairedId) {
       const pairedEl = document.getElementById(field.pairedId);
@@ -2396,6 +2445,10 @@ function resetSingleFieldToDefault(fieldId) {
     const defaultAmt = Math.round(currentHomePrice * (defaultPct / 100));
     patch['downPayment'] = defaultAmt;
     patch['downPaymentPercent'] = defaultPct;
+  } else if (fieldId === 'interest-rate') {
+    const defaultRate = DEFAULT_PRESET_RATES[activeLoanPreset] !== undefined ? DEFAULT_PRESET_RATES[activeLoanPreset] : 6.5;
+    loanPresetRates[activeLoanPreset] = defaultRate;
+    patch['interestRate'] = defaultRate;
   } else {
     const defaultVal = DEFAULT_INPUT_VALUES[fieldId];
     if (defaultVal === undefined) return;
@@ -2827,11 +2880,20 @@ function setupEventHandlers() {
   const presetButtons = document.querySelectorAll('.btn-preset');
   presetButtons.forEach(btn => {
     btn.addEventListener('click', () => {
+      // Save current rate for active preset before switching
+      loanPresetRates[activeLoanPreset] = parseFloat(elInterestRate.value) || 0;
+
       presetButtons.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
 
       const preset = btn.getAttribute('data-preset');
       activeLoanPreset = preset;
+
+      const rateForPreset = (loanPresetRates && loanPresetRates[preset] !== undefined)
+        ? loanPresetRates[preset]
+        : (DEFAULT_PRESET_RATES[preset] || 6.5);
+      elInterestRate.value = rateForPreset;
+      if (elInterestSlider) elInterestSlider.value = rateForPreset;
 
       if (preset === '30-fixed') {
         isArmLoan = false;
@@ -3009,7 +3071,9 @@ function setupEventHandlers() {
   });
 
   // 3. Interest Rate Sync
-  linkSliderAndInput(elInterestRate, elInterestSlider);
+  linkSliderAndInput(elInterestRate, elInterestSlider, () => {
+    loanPresetRates[activeLoanPreset] = parseFloat(elInterestRate.value) || 0;
+  });
 
   // 4. Term Sync
   linkSliderAndInput(elLoanTerm, elTermSlider);
@@ -4443,6 +4507,7 @@ export {
   resetSingleFieldToDefault,
   getDefaultValueForField,
   DEFAULT_INPUT_VALUES,
+  DEFAULT_PRESET_RATES,
   NON_RESETTABLE_FIELDS,
   getInitialTheme,
   setTheme,

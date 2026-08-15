@@ -1848,6 +1848,99 @@ describe('15. Collapsible Accordion Input Panels & Mobile Floating Summary Bar',
       expect(wrapper.innerHTML).toContain('Best Value');
     });
   });
+
+  describe('24. Per-Loan-Type Interest Rate Tests', () => {
+    it('should switch interest rate dynamically when changing loan preset (30-fixed, 15-fixed, 5-arm)', () => {
+      appModule.resetToDefaults();
+      const btn30 = document.querySelector('.btn-preset[data-preset="30-fixed"]');
+      const btn15 = document.querySelector('.btn-preset[data-preset="15-fixed"]');
+      const btn5Arm = document.querySelector('.btn-preset[data-preset="5-arm"]');
+      const elIr = document.getElementById('interest-rate');
+
+      expect(parseFloat(elIr.value)).toBe(6.5);
+
+      btn15.click();
+      expect(parseFloat(elIr.value)).toBe(5.75);
+
+      btn5Arm.click();
+      expect(parseFloat(elIr.value)).toBe(6);
+
+      btn30.click();
+      expect(parseFloat(elIr.value)).toBe(6.5);
+    });
+
+    it('should maintain separate interest rates for each loan preset when modified by user', () => {
+      appModule.resetToDefaults();
+      const btn30 = document.querySelector('.btn-preset[data-preset="30-fixed"]');
+      const btn15 = document.querySelector('.btn-preset[data-preset="15-fixed"]');
+      const elIr = document.getElementById('interest-rate');
+
+      // Change 30-fixed rate to 7.0%
+      elIr.value = '7.0';
+      elIr.dispatchEvent(new Event('input', { bubbles: true }));
+
+      // Switch to 15-fixed
+      btn15.click();
+      expect(parseFloat(elIr.value)).toBe(5.75);
+
+      // Change 15-fixed rate to 5.25%
+      elIr.value = '5.25';
+      elIr.dispatchEvent(new Event('input', { bubbles: true }));
+
+      // Switch back to 30-fixed and verify 7.0% is preserved
+      btn30.click();
+      expect(parseFloat(elIr.value)).toBe(7);
+
+      // Switch back to 15-fixed and verify 5.25% is preserved
+      btn15.click();
+      expect(parseFloat(elIr.value)).toBe(5.25);
+    });
+
+    it('should serialize and deserialize per-loan-type interest rates in scenarios', () => {
+      appModule.resetToDefaults();
+      const btn15 = document.querySelector('.btn-preset[data-preset="15-fixed"]');
+      const elIr = document.getElementById('interest-rate');
+
+      elIr.value = '6.8';
+      elIr.dispatchEvent(new Event('input', { bubbles: true }));
+
+      btn15.click();
+      elIr.value = '5.5';
+      elIr.dispatchEvent(new Event('input', { bubbles: true }));
+
+      const scenario = appModule.saveScenario('Custom Rates Scenario');
+      expect(scenario.state.loanPresetRates['30-fixed']).toBe(6.8);
+      expect(scenario.state.loanPresetRates['15-fixed']).toBe(5.5);
+
+      appModule.resetToDefaults();
+      appModule.loadScenario(scenario.id);
+
+      expect(document.querySelector('.btn-preset.active').getAttribute('data-preset')).toBe('15-fixed');
+      expect(parseFloat(elIr.value)).toBe(5.5);
+
+      const btn30 = document.querySelector('.btn-preset[data-preset="30-fixed"]');
+      btn30.click();
+      expect(parseFloat(elIr.value)).toBe(6.8);
+    });
+
+    it('should ignore single field reset request for interest-rate as it is a core non-resettable field', () => {
+      appModule.resetToDefaults();
+      const btn15 = document.querySelector('.btn-preset[data-preset="15-fixed"]');
+      const elIr = document.getElementById('interest-rate');
+
+      btn15.click();
+      expect(parseFloat(elIr.value)).toBe(5.75);
+
+      // Modify 15-yr interest rate
+      elIr.value = '6.25';
+      elIr.dispatchEvent(new Event('input', { bubbles: true }));
+      expect(parseFloat(elIr.value)).toBe(6.25);
+
+      // Reset single field interest-rate should be ignored (core field protected)
+      appModule.resetSingleFieldToDefault('interest-rate');
+      expect(parseFloat(elIr.value)).toBe(6.25);
+    });
+  });
 });
 
 
