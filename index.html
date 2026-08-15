@@ -184,19 +184,20 @@
               </div>
 
               <!-- Down Payment -->
-              <div class="form-field-group">
+              <div class="form-field-group" id="down-payment-group">
+                <div class="field-group-header">
+                  <label for="down-payment">Down Payment <i class="fa-solid fa-circle-info info-icon"
+                      data-term="down-payment" title="Click for plain-English explanation" role="button"
+                      tabindex="0"></i></label>
+                </div>
                 <div class="input-group-row">
                   <div class="input-group width-65">
-                    <label for="down-payment">Down Payment <i class="fa-solid fa-circle-info info-icon"
-                        data-term="down-payment" title="Click for plain-English explanation" role="button"
-                        tabindex="0"></i></label>
                     <div class="input-wrapper prefix">
                       <span class="input-addon">$</span>
                       <input type="number" id="down-payment" value="90000" min="0" max="10000000" step="1000">
                     </div>
                   </div>
                   <div class="input-group width-35">
-                    <label for="down-payment-percent">Percent</label>
                     <div class="input-wrapper suffix">
                       <input type="number" id="down-payment-percent" value="20" min="0" max="99" step="0.1">
                       <span class="input-addon">%</span>
@@ -209,18 +210,19 @@
 
               <!-- Closing Costs -->
               <div class="form-field-group" id="closing-costs-group">
+                <div class="field-group-header">
+                  <label for="closing-costs">Est. Closing Costs <i class="fa-solid fa-circle-info info-icon"
+                      data-term="closing-costs" title="Click for plain-English explanation" role="button"
+                      tabindex="0"></i></label>
+                </div>
                 <div class="input-group-row">
                   <div class="input-group width-65">
-                    <label for="closing-costs">Est. Closing Costs <i class="fa-solid fa-circle-info info-icon"
-                        data-term="closing-costs" title="Click for plain-English explanation" role="button"
-                        tabindex="0"></i></label>
                     <div class="input-wrapper prefix">
                       <span class="input-addon">$</span>
                       <input type="number" id="closing-costs" value="13500" min="0" max="1000000" step="100">
                     </div>
                   </div>
                   <div class="input-group width-35">
-                    <label for="closing-costs-percent">Rate</label>
                     <div class="input-wrapper suffix">
                       <input type="number" id="closing-costs-percent" value="3.0" min="0" max="20" step="0.1">
                       <span class="input-addon">%</span>

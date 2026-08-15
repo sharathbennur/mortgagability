@@ -1655,19 +1655,28 @@ describe('15. Collapsible Accordion Input Panels & Mobile Floating Summary Bar',
       expect(activeBtnAfter.getAttribute('data-preset')).toBe('30-fixed');
     });
 
-    it('should reset all input parameters to default values when resetToDefaults is called', () => {
+    it('should reset secondary input parameters to default values while preserving core fields when resetToDefaults is called', () => {
       // Modify inputs to non-default values
       document.getElementById('home-price').value = 800000;
       document.getElementById('interest-rate').value = 8.5;
+      document.getElementById('take-home-salary').value = 12000;
+      document.getElementById('monthly-expenses').value = 4000;
       document.getElementById('extra-monthly').value = 500;
+      document.getElementById('property-tax').value = 1.8;
 
       // Call resetToDefaults
       appModule.resetToDefaults();
 
-      expect(document.getElementById('home-price').value).toBe('450000');
-      expect(document.getElementById('interest-rate').value).toBe('6.5');
+      // Excluded core fields must retain their custom values
+      expect(document.getElementById('home-price').value).toBe('800000');
+      expect(document.getElementById('interest-rate').value).toBe('8.5');
+      expect(document.getElementById('take-home-salary').value).toBe('12000');
+      expect(document.getElementById('monthly-expenses').value).toBe('4000');
+
+      // Secondary fields must be reset to defaults
       expect(document.getElementById('extra-monthly').value).toBe('200');
-      
+      expect(document.getElementById('property-tax').value).toBe('0.9');
+
       const activeBtn = document.querySelector('.btn-preset.active');
       expect(activeBtn.getAttribute('data-preset')).toBe('30-fixed');
     });
@@ -1681,6 +1690,115 @@ describe('15. Collapsible Accordion Input Panels & Mobile Floating Summary Bar',
 
       appModule.setSimpleMode(false);
       expect(btnReset.closest('.navbar-utility-actions')).not.toBeNull();
+    });
+
+    it('should display estimated closing costs input group in Simple Mode', () => {
+      appModule.setSimpleMode(true);
+      const ccGroup = document.getElementById('closing-costs-group');
+      expect(ccGroup).not.toBeNull();
+    });
+
+    it('should update field status indicators when values are modified vs at default', () => {
+      appModule.resetToDefaults();
+      appModule.updateFieldModifiedIndicators();
+
+      const homePriceTag = document.querySelector('label[for="home-price"] .field-status-tag');
+      expect(homePriceTag).not.toBeNull();
+      expect(homePriceTag.classList.contains('default')).toBe(true);
+
+      // Modify Home Price (non-resettable field)
+      document.getElementById('home-price').value = 600000;
+      appModule.updateFieldModifiedIndicators();
+
+      expect(homePriceTag.classList.contains('modified')).toBe(true);
+      expect(homePriceTag.classList.contains('resettable')).toBe(false); // Must not be resettable per user rule
+      expect(homePriceTag.getAttribute('data-reset-field')).toBeNull();
+
+      // Modify Extra Monthly (resettable field)
+      document.getElementById('extra-monthly').value = 400;
+      appModule.updateFieldModifiedIndicators();
+
+      const extraMonthlyTag = document.querySelector('label[for="extra-monthly"] .field-status-tag');
+      expect(extraMonthlyTag.classList.contains('modified')).toBe(true);
+      expect(extraMonthlyTag.classList.contains('resettable')).toBe(true);
+      expect(extraMonthlyTag.getAttribute('data-reset-field')).toBe('extra-monthly');
+
+      // Reset single field
+      appModule.resetSingleFieldToDefault('extra-monthly');
+      expect(document.getElementById('extra-monthly').value).toBe('200');
+      expect(extraMonthlyTag.classList.contains('default')).toBe(true);
+    });
+
+    it('should ignore single-field reset requests for non-resettable core fields', () => {
+      document.getElementById('home-price').value = 750000;
+      document.getElementById('interest-rate').value = 7.2;
+
+      appModule.resetSingleFieldToDefault('home-price');
+      appModule.resetSingleFieldToDefault('interest-rate');
+
+      // Values must remain modified (not reset by single-field reset)
+      expect(document.getElementById('home-price').value).toBe('750000');
+      expect(document.getElementById('interest-rate').value).toBe('7.2');
+    });
+
+    it('should handle chained modified status and reset for Down payment and Est. closing costs', () => {
+      appModule.resetToDefaults();
+      appModule.updateFieldModifiedIndicators();
+
+      const dpTag = document.querySelector('label[for="down-payment"] .field-status-tag');
+      const ccTag = document.querySelector('label[for="closing-costs"] .field-status-tag');
+
+      expect(dpTag.classList.contains('default')).toBe(true);
+      expect(ccTag.classList.contains('default')).toBe(true);
+
+      // Modify Down Payment Percent (chained with Down payment amount)
+      document.getElementById('down-payment-percent').value = 25;
+      appModule.updateFieldModifiedIndicators();
+      expect(dpTag.classList.contains('modified')).toBe(true);
+      expect(dpTag.classList.contains('resettable')).toBe(false); // Core field non-resettable
+
+      // Modify Closing Costs Percent (chained with Est. closing costs amount)
+      document.getElementById('closing-costs-percent').value = 4.5;
+      appModule.updateFieldModifiedIndicators();
+      expect(ccTag.classList.contains('modified')).toBe(true);
+      expect(ccTag.classList.contains('resettable')).toBe(true);
+      expect(ccTag.getAttribute('title')).toContain('$13,500 (3%)');
+
+      // Reset single chained field for closing costs
+      appModule.resetSingleFieldToDefault('closing-costs');
+      expect(document.getElementById('closing-costs').value).toBe('13500');
+      expect(document.getElementById('closing-costs-percent').value).toBe('3');
+      expect(ccTag.classList.contains('default')).toBe(true);
+    });
+
+    it('should dynamically calculate reset values based on non-reset inputs (e.g. custom Home Price)', () => {
+      // User sets Home Purchase Price to $1,500,000
+      document.getElementById('home-price').value = 1500000;
+      // User sets Closing Costs Rate to 4% (which sets closing costs to $60,000)
+      document.getElementById('closing-costs-percent').value = 4.0;
+      document.getElementById('closing-costs').value = 60000;
+      appModule.updateFieldModifiedIndicators();
+
+      const ccTag = document.querySelector('label[for="closing-costs"] .field-status-tag');
+      expect(ccTag.classList.contains('modified')).toBe(true);
+
+      // User resets closing costs using single-field reset button
+      appModule.resetSingleFieldToDefault('closing-costs');
+
+      // Rate resets to 3% and value resets to 3% of $1,500,000 = $45,000 (NOT hardcoded 13,500)
+      expect(document.getElementById('closing-costs-percent').value).toBe('3');
+      expect(document.getElementById('closing-costs').value).toBe('45000');
+      expect(ccTag.classList.contains('default')).toBe(true);
+
+      // Global reset defaults should also calculate closing costs dynamically based on $1,500,000
+      document.getElementById('closing-costs-percent').value = 5.0;
+      document.getElementById('closing-costs').value = 75000;
+
+      appModule.resetToDefaults();
+
+      expect(document.getElementById('home-price').value).toBe('1500000');
+      expect(document.getElementById('closing-costs-percent').value).toBe('3');
+      expect(document.getElementById('closing-costs').value).toBe('45000');
     });
   });
 

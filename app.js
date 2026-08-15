@@ -139,6 +139,34 @@ const STORAGE_KEYS = {
   MODE: 'mortgagability_simple_mode'
 };
 
+const DEFAULT_INPUT_VALUES = {
+  'home-price': 450000,
+  'down-payment': 90000,
+  'down-payment-percent': 20,
+  'closing-costs': 13500,
+  'closing-costs-percent': 3.0,
+  'interest-rate': 6.5,
+  'loan-term': 30,
+  'property-tax': 0.9,
+  'home-insurance': 0.5,
+  'arm-fixed-term': 5,
+  'arm-adjusted-rate': 7.5,
+  'take-home-salary': 8000,
+  'monthly-expenses': 3000,
+  'extra-monthly': 200,
+  'recast-amount': 50000,
+  'recast-month': 60
+};
+
+const NON_RESETTABLE_FIELDS = new Set([
+  'home-price',
+  'down-payment',
+  'down-payment-percent',
+  'interest-rate',
+  'take-home-salary',
+  'monthly-expenses'
+]);
+
 let currentScenarioId = null;
 
 // Loan structure state
@@ -893,6 +921,9 @@ function updateUI() {
   // Re-render chart and table
   renderChart();
   renderTable();
+
+  // Update field modified vs default indicator badges
+  updateFieldModifiedIndicators();
 }
 
 /**
@@ -2150,14 +2181,47 @@ function restoreCurrentState() {
   }
 }
 
+function getDefaultValueForField(fieldId, currentHomePrice = 450000) {
+  if (fieldId === 'closing-costs') {
+    return Math.round(currentHomePrice * (DEFAULT_INPUT_VALUES['closing-costs-percent'] / 100));
+  }
+  if (fieldId === 'down-payment') {
+    return Math.round(currentHomePrice * (DEFAULT_INPUT_VALUES['down-payment-percent'] / 100));
+  }
+  return DEFAULT_INPUT_VALUES[fieldId];
+}
+
 function resetToDefaults() {
+  // Preserve current core user inputs: Home Price, Down Payment, Interest Rate, Take-Home Salary, Monthly Expenses
+  const elHp = document.getElementById('home-price');
+  const elDp = document.getElementById('down-payment');
+  const elDpPct = document.getElementById('down-payment-percent');
+  const elIr = document.getElementById('interest-rate');
+  const elSal = document.getElementById('take-home-salary');
+  const elExp = document.getElementById('monthly-expenses');
+
+  const currentHomePrice = elHp && !isNaN(parseFloat(elHp.value)) ? parseFloat(elHp.value) : 450000;
+  const currentDownPayment = elDp && !isNaN(parseFloat(elDp.value)) ? parseFloat(elDp.value) : 90000;
+  const currentDownPaymentPercent = elDpPct && !isNaN(parseFloat(elDpPct.value)) ? parseFloat(elDpPct.value) : 20;
+  const currentInterestRate = elIr && !isNaN(parseFloat(elIr.value)) ? parseFloat(elIr.value) : 6.5;
+  const currentTakeHomeSalary = elSal && !isNaN(parseFloat(elSal.value)) ? parseFloat(elSal.value) : 8000;
+  const currentMonthlyExpenses = elExp && !isNaN(parseFloat(elExp.value)) ? parseFloat(elExp.value) : 3000;
+
+  // Calculate default closing costs dollar amount dynamically based on currentHomePrice (3.0%)
+  const defaultClosingCostsPct = DEFAULT_INPUT_VALUES['closing-costs-percent'];
+  const defaultClosingCostsAmt = Math.round(currentHomePrice * (defaultClosingCostsPct / 100));
+
   const defaultState = {
-    homePrice: 450000,
-    downPayment: 90000,
-    downPaymentPercent: 20,
-    closingCosts: 13500,
-    closingCostsPercent: 3.0,
-    interestRate: 6.5,
+    homePrice: currentHomePrice,
+    downPayment: currentDownPayment,
+    downPaymentPercent: currentDownPaymentPercent,
+    interestRate: currentInterestRate,
+    takeHomeSalary: currentTakeHomeSalary,
+    monthlyExpenses: currentMonthlyExpenses,
+
+    // Reset secondary options & settings to defaults based on current home price:
+    closingCosts: defaultClosingCostsAmt,
+    closingCostsPercent: defaultClosingCostsPct,
     loanTerm: 30,
     extraMonthly: 200,
     scheduledOneTimePayments: [],
@@ -2167,8 +2231,6 @@ function resetToDefaults() {
     recastMonth: 60,
     propertyTax: 0.9,
     homeInsurance: 0.5,
-    takeHomeSalary: 8000,
-    monthlyExpenses: 3000,
     activeLoanPreset: '30-fixed',
     isArmLoan: false,
     armFixedTerm: 5,
@@ -2193,6 +2255,160 @@ function resetToDefaults() {
 
   setZoomPreset('full');
 
+  recalculate();
+  autoSaveCurrentState();
+}
+
+function updateFieldModifiedIndicators() {
+  const elHp = document.getElementById('home-price');
+  const currentHomePrice = elHp && !isNaN(parseFloat(elHp.value)) ? parseFloat(elHp.value) : 450000;
+
+  const fields = [
+    { id: 'home-price' },
+    { id: 'down-payment', pairedId: 'down-payment-percent' },
+    { id: 'closing-costs', pairedId: 'closing-costs-percent' },
+    { id: 'interest-rate' },
+    { id: 'loan-term' },
+    { id: 'property-tax' },
+    { id: 'home-insurance' },
+    { id: 'take-home-salary' },
+    { id: 'monthly-expenses' },
+    { id: 'extra-monthly' },
+    { id: 'recast-amount' },
+    { id: 'recast-month' },
+    { id: 'arm-fixed-term' },
+    { id: 'arm-adjusted-rate' }
+  ];
+
+  fields.forEach(field => {
+    const el = document.getElementById(field.id);
+    if (!el) return;
+
+    const currentVal = parseFloat(el.value);
+    const defaultVal = getDefaultValueForField(field.id, currentHomePrice);
+    let isModified = Math.abs((isNaN(currentVal) ? 0 : currentVal) - defaultVal) > 0.5;
+
+    if (field.pairedId) {
+      const pairedEl = document.getElementById(field.pairedId);
+      if (pairedEl) {
+        const pairedCurrent = parseFloat(pairedEl.value);
+        const pairedDefault = DEFAULT_INPUT_VALUES[field.pairedId];
+        if (Math.abs((isNaN(pairedCurrent) ? 0 : pairedCurrent) - pairedDefault) > 0.05) {
+          isModified = true;
+        }
+      }
+    }
+
+    let label = document.querySelector(`label[for="${field.id}"]`);
+    if (!label) {
+      const inputGroup = el.closest('.input-group') || el.closest('.form-field-group');
+      if (inputGroup) label = inputGroup.querySelector('label');
+    }
+    if (!label) return;
+
+    let tag = label.querySelector('.field-status-tag');
+    if (!tag) {
+      tag = document.createElement('span');
+      label.appendChild(tag);
+    }
+
+    const isNonResettable = NON_RESETTABLE_FIELDS.has(field.id);
+
+    if (isModified) {
+      tag.className = `field-status-tag modified ${isNonResettable ? '' : 'resettable'}`;
+      if (isNonResettable) {
+        tag.innerHTML = `Modified`;
+        tag.setAttribute('title', 'Modified from default value');
+        tag.removeAttribute('data-reset-field');
+      } else {
+        let formattedDefault = '';
+        if (field.id === 'closing-costs') {
+          formattedDefault = `$${defaultVal.toLocaleString()} (${DEFAULT_INPUT_VALUES['closing-costs-percent']}%)`;
+        } else if (field.id.includes('rate') || field.id.includes('tax') || field.id.includes('insurance')) {
+          formattedDefault = `${defaultVal}%`;
+        } else if (field.id.includes('term') || field.id.includes('month')) {
+          formattedDefault = `${defaultVal}`;
+        } else {
+          formattedDefault = `$${defaultVal.toLocaleString()}`;
+        }
+        tag.innerHTML = `Modified <i class="fa-solid fa-arrow-rotate-left"></i>`;
+        tag.setAttribute('title', `Click to reset field to default (${formattedDefault})`);
+        tag.setAttribute('data-reset-field', field.id);
+      }
+    } else {
+      tag.className = 'field-status-tag default';
+      tag.innerHTML = 'Default';
+      tag.setAttribute('title', 'Using default value');
+      tag.removeAttribute('data-reset-field');
+    }
+  });
+
+  // Preset indicator
+  const presetContainer = document.getElementById('loan-preset-container');
+  if (presetContainer) {
+    const inputGroup = presetContainer.closest('.input-group');
+    if (inputGroup) {
+      const label = inputGroup.querySelector('label');
+      if (label) {
+        let tag = label.querySelector('.field-status-tag');
+        if (!tag) {
+          tag = document.createElement('span');
+          label.appendChild(tag);
+        }
+        const isModified = activeLoanPreset !== '30-fixed';
+        if (isModified) {
+          tag.className = 'field-status-tag modified resettable';
+          tag.innerHTML = `Modified <i class="fa-solid fa-arrow-rotate-left"></i>`;
+          tag.setAttribute('title', 'Click to reset loan type to 30-Yr Fixed');
+          tag.setAttribute('data-reset-field', 'preset');
+        } else {
+          tag.className = 'field-status-tag default';
+          tag.innerHTML = 'Default';
+          tag.setAttribute('title', 'Using default value');
+          tag.removeAttribute('data-reset-field');
+        }
+      }
+    }
+  }
+}
+
+function resetSingleFieldToDefault(fieldId) {
+  if (NON_RESETTABLE_FIELDS.has(fieldId)) return;
+
+  if (fieldId === 'preset') {
+    const btn30 = document.querySelector('.btn-preset[data-preset="30-fixed"]');
+    if (btn30) btn30.click();
+    return;
+  }
+
+  const elHp = document.getElementById('home-price');
+  const currentHomePrice = elHp && !isNaN(parseFloat(elHp.value)) ? parseFloat(elHp.value) : 450000;
+
+  const patch = {};
+
+  if (fieldId === 'closing-costs' || fieldId === 'closing-costs-percent') {
+    const defaultPct = DEFAULT_INPUT_VALUES['closing-costs-percent'];
+    const defaultAmt = Math.round(currentHomePrice * (defaultPct / 100));
+    patch['closingCosts'] = defaultAmt;
+    patch['closingCostsPercent'] = defaultPct;
+  } else if (fieldId === 'down-payment' || fieldId === 'down-payment-percent') {
+    const defaultPct = DEFAULT_INPUT_VALUES['down-payment-percent'];
+    const defaultAmt = Math.round(currentHomePrice * (defaultPct / 100));
+    patch['downPayment'] = defaultAmt;
+    patch['downPaymentPercent'] = defaultPct;
+  } else {
+    const defaultVal = DEFAULT_INPUT_VALUES[fieldId];
+    if (defaultVal === undefined) return;
+
+    const camelKey = fieldId.replace(/-([a-z])/g, g => g[1].toUpperCase());
+    patch[camelKey] = defaultVal;
+
+    if (fieldId === 'recast-amount') {
+      patch['recastAmount'] = DEFAULT_INPUT_VALUES['recast-amount'];
+    }
+  }
+
+  applyStateObject(patch);
   recalculate();
   autoSaveCurrentState();
 }
@@ -3083,6 +3299,18 @@ function setupEventHandlers() {
       openCompareModal();
     });
   }
+
+  document.addEventListener('click', (e) => {
+    const resetTag = e.target.closest('.field-status-tag.resettable');
+    if (resetTag) {
+      const fieldId = resetTag.getAttribute('data-reset-field');
+      if (fieldId) {
+        e.preventDefault();
+        e.stopPropagation();
+        resetSingleFieldToDefault(fieldId);
+      }
+    }
+  });
 
   const elOverflowDelete = document.getElementById('overflow-item-delete');
   if (elOverflowDelete) {
@@ -4211,6 +4439,11 @@ export {
   getSavedScenarios,
   restoreCurrentState,
   resetToDefaults,
+  updateFieldModifiedIndicators,
+  resetSingleFieldToDefault,
+  getDefaultValueForField,
+  DEFAULT_INPUT_VALUES,
+  NON_RESETTABLE_FIELDS,
   getInitialTheme,
   setTheme,
   toggleTheme,
