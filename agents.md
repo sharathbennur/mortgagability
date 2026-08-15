@@ -1,9 +1,9 @@
-# Mortgage-Abilty.com - AI Agent Guide
+# Mortgage-Ability.com - AI Agent Guide
 
-Welcome! This document provides essential architectural context and coding guidelines for the "Mortgage-Abilty.com" project. If you are modifying, adding features to, or refactoring this project, please follow the conventions detailed below.
+Welcome! This document provides essential architectural context and coding guidelines for the "Mortgage-Ability.com" project. If you are modifying, adding features to, or refactoring this project, please follow the conventions detailed below.
 
 ## Project Goal
-Mortgage-Abilty.com is a high-fidelity, high-performance static Single Page Application (SPA) designed to let users calculate base mortgage costs, model re-amortization recasts, and simulate accelerated payoff strategies (such as extra monthly payments or multi-month scheduled lump-sum prepayments).
+Mortgage-Ability.com is a high-fidelity, high-performance static Single Page Application (SPA) designed to let users calculate base mortgage costs, model re-amortization recasts, and simulate accelerated payoff strategies (such as extra monthly payments or multi-month scheduled lump-sum prepayments).
 
 ## Project Structure
 The project is built entirely on a vanilla frontend stack without heavy frameworks, compiled dynamically by Vite:

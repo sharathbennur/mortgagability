@@ -1,5 +1,5 @@
 // ==========================================================================
-// MORTGAGE-ABILTY.COM APPLICATION ENGINE
+// MORTGAGE-ABILITY.COM APPLICATION ENGINE
 // ==========================================================================
 
 // Global state variables
@@ -1137,6 +1137,16 @@ function setSimpleMode(enabled) {
         // Reset Monthly Payment card to Text view in Simple Mode
         const btnText = document.getElementById('btn-piti-view-text');
         if (btnText) btnText.click();
+
+        // Switch to 30-fixed if an ARM or Custom preset was active
+        const activePresetBtn = document.querySelector('.btn-preset.active');
+        if (activePresetBtn) {
+          const presetVal = activePresetBtn.getAttribute('data-preset');
+          if (presetVal && (presetVal.includes('arm') || presetVal === 'custom')) {
+            const btn30Fixed = document.querySelector('.btn-preset[data-preset="30-fixed"]');
+            if (btn30Fixed) btn30Fixed.click();
+          }
+        }
       } else {
         elBtnModeToggle.classList.remove('active-simple-mode');
         if (elModeToggleIcon) elModeToggleIcon.className = 'fa-solid fa-feather';

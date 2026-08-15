@@ -1630,6 +1630,30 @@ describe('15. Collapsible Accordion Input Panels & Mobile Floating Summary Bar',
       expect(elInterestSaved.textContent).toBeDefined();
       expect(elTimeSaved.textContent).toBeDefined();
     });
+
+    it('should hide scenario toolbar in Simple Mode and show it in Advanced Mode', () => {
+      const scenarioToolbar = document.getElementById('scenario-toolbar');
+      expect(scenarioToolbar).not.toBeNull();
+
+      appModule.setSimpleMode(true);
+      expect(document.body.classList.contains('simple-mode')).toBe(true);
+
+      appModule.setSimpleMode(false);
+      expect(document.body.classList.contains('simple-mode')).toBe(false);
+    });
+
+    it('should reset active ARM or Custom loan preset to 30-fixed when entering Simple Mode', () => {
+      appModule.setSimpleMode(false);
+      const btn5Arm = document.querySelector('.btn-preset[data-preset="5-arm"]');
+      if (btn5Arm) btn5Arm.click();
+
+      const activeBtnBefore = document.querySelector('.btn-preset.active');
+      expect(activeBtnBefore.getAttribute('data-preset')).toBe('5-arm');
+
+      appModule.setSimpleMode(true);
+      const activeBtnAfter = document.querySelector('.btn-preset.active');
+      expect(activeBtnAfter.getAttribute('data-preset')).toBe('30-fixed');
+    });
   });
 
   describe('23. Compare Scenarios Modal Pop-Up Tests', () => {

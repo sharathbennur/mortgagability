@@ -1,6 +1,6 @@
-# Mortgage-Abilty.com — Premium Mortgage & Payoff Calculator
+# Mortgage-Ability.com — Premium Mortgage & Payoff Calculator
 
-Mortgage-Abilty.com is an interactive, premium single-page application (SPA) designed to help homebuyers and homeowners visualize, optimize, and accelerate their mortgage amortization with institutional-grade financial precision.
+Mortgage-Ability.com is an interactive, premium single-page application (SPA) designed to help homebuyers and homeowners visualize, optimize, and accelerate their mortgage amortization with institutional-grade financial precision.
 
 ## Features
 

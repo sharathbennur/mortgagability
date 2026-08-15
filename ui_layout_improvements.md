@@ -1,6 +1,6 @@
-# UI & Layout Improvement Roadmap — Mortgage-Abilty.com
+# UI & Layout Improvement Roadmap — Mortgage-Ability.com
 
-This document outlines proposed UI, UX, and layout enhancements for **Mortgage-Abilty.com** to elevate visual fidelity, feature depth, and user engagement.
+This document outlines proposed UI, UX, and layout enhancements for **Mortgage-Ability.com** to elevate visual fidelity, feature depth, and user engagement.
 
 ---
 
