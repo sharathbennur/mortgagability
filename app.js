@@ -2150,6 +2150,53 @@ function restoreCurrentState() {
   }
 }
 
+function resetToDefaults() {
+  const defaultState = {
+    homePrice: 450000,
+    downPayment: 90000,
+    downPaymentPercent: 20,
+    closingCosts: 13500,
+    closingCostsPercent: 3.0,
+    interestRate: 6.5,
+    loanTerm: 30,
+    extraMonthly: 200,
+    scheduledOneTimePayments: [],
+    oneTimeExtra: 0,
+    isRecastEnabled: false,
+    recastAmount: 50000,
+    recastMonth: 60,
+    propertyTax: 0.9,
+    homeInsurance: 0.5,
+    takeHomeSalary: 8000,
+    monthlyExpenses: 3000,
+    activeLoanPreset: '30-fixed',
+    isArmLoan: false,
+    armFixedTerm: 5,
+    armAdjustedRate: 7.5
+  };
+
+  applyStateObject(defaultState);
+
+  activeLoanPreset = '30-fixed';
+  const presetButtons = document.querySelectorAll('.btn-preset');
+  presetButtons.forEach(b => {
+    if (b.getAttribute('data-preset') === '30-fixed') {
+      b.classList.add('active');
+    } else {
+      b.classList.remove('active');
+    }
+  });
+
+  currentScenarioId = null;
+  if (elActiveScenarioName) elActiveScenarioName.textContent = 'Default Setup';
+  if (elScenarioCommentsBanner) elScenarioCommentsBanner.style.display = 'none';
+
+  setZoomPreset('full');
+
+  recalculate();
+  autoSaveCurrentState();
+}
+
 function updateScenarioCommentsBanner(scenario) {
   if (!elScenarioCommentsBanner) return;
 
@@ -3066,6 +3113,11 @@ function setupEventHandlers() {
 
   if (elBtnThemeToggle) {
     elBtnThemeToggle.addEventListener('click', toggleTheme);
+  }
+
+  const elBtnResetDefaults = document.getElementById('btn-reset-defaults');
+  if (elBtnResetDefaults) {
+    elBtnResetDefaults.addEventListener('click', resetToDefaults);
   }
 
   const elBtnModeToggle = document.getElementById('btn-mode-toggle');
@@ -4158,6 +4210,7 @@ export {
   deleteScenario,
   getSavedScenarios,
   restoreCurrentState,
+  resetToDefaults,
   getInitialTheme,
   setTheme,
   toggleTheme,

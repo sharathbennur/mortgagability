@@ -1654,6 +1654,34 @@ describe('15. Collapsible Accordion Input Panels & Mobile Floating Summary Bar',
       const activeBtnAfter = document.querySelector('.btn-preset.active');
       expect(activeBtnAfter.getAttribute('data-preset')).toBe('30-fixed');
     });
+
+    it('should reset all input parameters to default values when resetToDefaults is called', () => {
+      // Modify inputs to non-default values
+      document.getElementById('home-price').value = 800000;
+      document.getElementById('interest-rate').value = 8.5;
+      document.getElementById('extra-monthly').value = 500;
+
+      // Call resetToDefaults
+      appModule.resetToDefaults();
+
+      expect(document.getElementById('home-price').value).toBe('450000');
+      expect(document.getElementById('interest-rate').value).toBe('6.5');
+      expect(document.getElementById('extra-monthly').value).toBe('200');
+      
+      const activeBtn = document.querySelector('.btn-preset.active');
+      expect(activeBtn.getAttribute('data-preset')).toBe('30-fixed');
+    });
+
+    it('should have reset defaults button in DOM visible in both simple and advanced modes', () => {
+      const btnReset = document.getElementById('btn-reset-defaults');
+      expect(btnReset).not.toBeNull();
+
+      appModule.setSimpleMode(true);
+      expect(btnReset.closest('.navbar-utility-actions')).not.toBeNull();
+
+      appModule.setSimpleMode(false);
+      expect(btnReset.closest('.navbar-utility-actions')).not.toBeNull();
+    });
   });
 
   describe('23. Compare Scenarios Modal Pop-Up Tests', () => {
