@@ -1,0 +1,623 @@
+/* ==========================================================================
+   FORM INPUTS, SLIDERS, BADGES & PANELS
+   ========================================================================== */
+
+/* Main Dashboard Grid */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 380px) 1fr;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Glassmorphism Panel styles */
+.panel {
+  background: var(--panel-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--card-radius);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-md);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.panel:hover {
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.panel-header i:not(.info-icon) {
+  color: var(--primary-focus);
+  font-size: 1.25rem;
+}
+
+.panel-header h2 {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.panel-header.sub-section {
+  margin-top: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.panel-header.sub-section i:not(.info-icon) {
+  color: var(--accent-purple);
+}
+
+.divider {
+  height: 1px;
+  background: var(--panel-border);
+  margin: var(--space-6) 0;
+}
+
+.section-description {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: var(--space-5);
+}
+
+/* Inputs Form Styling */
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.field-group-header {
+  margin-bottom: var(--space-2);
+}
+
+.input-group label,
+.field-group-header label {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  width: 100%;
+}
+
+.field-status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin-left: auto;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.field-status-tag.default {
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .field-status-tag.default {
+  color: #64748b;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.field-status-tag.modified {
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.18);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+}
+
+[data-theme="light"] .field-status-tag.modified {
+  color: #4338ca;
+  background: #e0e7ff;
+  border-color: #a5b4fc;
+}
+
+.field-status-tag.modified.resettable {
+  cursor: pointer;
+}
+
+.field-status-tag.modified.resettable:hover {
+  color: #ffffff;
+  background: #4f46e5;
+  border-color: #6366f1;
+  transform: translateY(-1px);
+}
+
+[data-theme="light"] .field-status-tag.modified.resettable:hover {
+  color: #ffffff;
+  background: #4f46e5;
+  border-color: #3730a3;
+}
+
+.input-group-row {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-end;
+}
+
+.width-65 {
+  width: 65%;
+}
+
+.width-60 {
+  width: 60%;
+}
+
+.width-50 {
+  width: 50%;
+}
+
+.width-40 {
+  width: 40%;
+}
+
+.width-35 {
+  width: 35%;
+}
+
+/* Input Wrapper & Field styling */
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--input-radius);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.input-wrapper input:focus {
+  border-color: var(--input-focus);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+/* Prefix and Suffix addons */
+.input-wrapper.prefix input {
+  padding-left: 32px;
+}
+
+.input-wrapper.suffix input {
+  padding-right: 44px;
+}
+
+.input-addon {
+  position: absolute;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  font-weight: 500;
+  pointer-events: none;
+}
+
+.input-wrapper.prefix .input-addon {
+  left: 14px;
+}
+
+.input-wrapper.suffix .input-addon {
+  right: 14px;
+}
+
+/* Chrome/Safari spin buttons removal */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox spin buttons removal */
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+.form-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* Styled Sliders */
+.slider-wrapper {
+  padding-top: 0;
+}
+
+.slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+  margin: var(--space-2) 0 0 0;
+  transition: background 0.3s;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: pointer;
+  box-shadow: 0 0 10px var(--primary-glow);
+  transition: transform 0.1s, background-color 0.2s;
+}
+
+.slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  background: var(--accent-purple);
+}
+
+.slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: pointer;
+  box-shadow: 0 0 10px var(--primary-glow);
+  transition: transform 0.1s, background-color 0.2s;
+}
+
+.slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  background: var(--accent-purple);
+}
+
+/* Loan Amount Badge */
+.loan-amount-badge {
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: var(--input-radius);
+  padding: var(--space-4) var(--space-5);
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  font-size: 0.9rem;
+}
+
+.badge-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.loan-amount-badge span {
+  color: var(--text-secondary);
+}
+
+.loan-amount-badge strong {
+  color: var(--primary);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+/* Loan Presets Segment Grid */
+.loan-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--input-radius);
+  padding: 6px;
+}
+
+.btn-preset {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 6px 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-preset:hover:not(.active) {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.btn-preset.active {
+  background: linear-gradient(135deg, var(--primary), var(--accent-purple));
+  color: #ffffff;
+  box-shadow: 0 2px 8px var(--primary-glow);
+}
+
+/* ARM Settings Panel */
+.arm-settings-panel {
+  background: rgba(245, 158, 11, 0.05);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.arm-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--warning);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.arm-phase-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(10, 15, 30, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.arm-phase-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.arm-phase-item .phase-title {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.arm-phase-item .phase-rate {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.arm-phase-item.warning .phase-rate {
+  color: var(--warning);
+}
+
+.arm-phase-item .phase-payment {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.arm-phase-arrow {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* Loan Recast Control Card & Toggle Switch */
+.recast-control-card {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.recast-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.recast-toggle-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.switch-toggle {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 20px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.switch-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--input-border);
+  border-radius: 20px;
+  transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.switch-toggle input:checked+.switch-slider {
+  background-color: var(--primary);
+}
+
+.switch-toggle input:checked+.switch-slider:before {
+  transform: translateX(18px);
+}
+
+.recast-card-body {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--panel-border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: compareFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.recast-impact-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.78rem;
+}
+
+.recast-impact-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.impact-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.impact-val {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Target Term Calculator Section */
+.target-calc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .target-calc-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.target-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.target-results {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.result-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tile-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tile-value {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--success);
+  text-shadow: 0 0 15px var(--success-glow);
+}
+
+.result-sub-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 12px;
+}
+
+.sub-info-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.sub-info-row strong {
+  color: var(--text-primary);
+}
+
+.sub-info-row strong.text-success {
+  color: var(--success);
+}

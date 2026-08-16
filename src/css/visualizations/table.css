@@ -1,0 +1,233 @@
+/* ==========================================================================
+   AMORTIZATION SCHEDULE TABLE & BUTTON COMPONENTS
+   ========================================================================== */
+
+/* Amortization Table Styles */
+.table-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.table-header-row .panel-header {
+  margin-bottom: 0;
+}
+
+.table-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.view-toggle {
+  display: flex;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 20px;
+  padding: 2px;
+}
+
+.view-toggle .btn {
+  border-radius: 18px;
+  border: none;
+  background: transparent;
+  padding: 6px 16px;
+}
+
+.view-toggle .btn.active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 2px 8px var(--primary-glow);
+}
+
+/* Chart Toggle Buttons */
+.chart-toggle-buttons {
+  display: flex;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 20px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.chart-toggle-buttons .btn {
+  border-radius: 18px;
+  border: none;
+  background: transparent;
+  padding: 6px 16px;
+  color: var(--text-secondary);
+}
+
+.chart-toggle-buttons .btn.active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 2px 8px var(--primary-glow);
+}
+
+.chart-toggle-buttons .btn:hover:not(.active) {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.table-scroll-container {
+  overflow-x: auto;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: rgba(10, 15, 30, 0.4);
+}
+
+.schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.schedule-table th,
+.schedule-table td {
+  padding: 12px 16px;
+  text-align: right;
+  border-bottom: 1px solid var(--panel-border);
+  white-space: nowrap;
+}
+
+.schedule-table th {
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.schedule-table th.text-center,
+.schedule-table td.text-center {
+  text-align: center;
+}
+
+.schedule-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.schedule-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.schedule-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Color Coding in Table */
+.text-success {
+  color: var(--success);
+}
+
+.text-primary {
+  color: var(--primary);
+}
+
+.text-warning {
+  color: var(--warning);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+/* Table Pagination styling */
+.table-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.pagination-info {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* Button UI Components */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: var(--input-radius);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--accent-purple));
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px var(--primary-glow);
+}
+
+.btn-primary i,
+.btn-primary span {
+  color: #ffffff !important;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--input-border);
+}
+
+.btn-outline:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+}
+
+.btn-xs {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  border-radius: 4px;
+}
+
+.btn-outline.btn-xs {
+  color: var(--text-muted);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.btn-outline.btn-xs:hover {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}

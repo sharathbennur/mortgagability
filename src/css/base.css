@@ -1,0 +1,62 @@
+/* ==========================================================================
+   RESET, BASE STYLES & ACCESSIBILITY
+   ========================================================================== */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Universal Accessibility Focus-Visible Indicators */
+:focus-visible {
+  outline: 2px solid var(--primary-focus);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--primary-glow);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--primary-focus);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--primary-glow);
+}
+
+body {
+  background: radial-gradient(circle at 50% 0%, var(--bg-gradient-start), var(--bg-gradient-end));
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-body);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-gradient-start);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
