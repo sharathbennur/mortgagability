@@ -704,6 +704,7 @@ describe('8. Amortization Table View & Pagination Tests', () => {
 
 describe('9. Target Term Payoff Calculator Deep Coverage', () => {
   it('should update target calculations reactively when target term or principal input changes', () => {
+    appModule.resetToDefaults();
     const elTargetTerm = document.getElementById('target-term');
     const elTargetPrincipal = document.getElementById('target-principal');
     const elTargetExtraPayment = document.getElementById('target-extra-payment');
@@ -725,23 +726,102 @@ describe('9. Target Term Payoff Calculator Deep Coverage', () => {
     expect(elTargetExtraPayment.textContent).not.toBe('$0.00');
   });
 
-  it('should reset target principal to active loan principal when reset button is clicked', () => {
+  it('should calculate getNetLoanPrincipal minus recast lump sum and one-time extra payments', () => {
+    appModule.resetToDefaults();
     const elHomePrice = document.getElementById('home-price');
     const elDownPayment = document.getElementById('down-payment');
+    const elEnableRecast = document.getElementById('enable-recast');
+    const elRecastAmount = document.getElementById('recast-amount');
+
+    elHomePrice.value = 500000;
+    elDownPayment.value = 100000; // Base loan = 400,000
+
+    // Set 1 scheduled one-time extra payment of 20,000
+    appModule.setScheduledOneTimePayments([{ id: 'test-1', amount: 20000, month: 12 }]);
+
+    // Recast disabled initially -> Net loan = 400,000 - 20,000 = 380,000
+    expect(appModule.getNetLoanPrincipal()).toBe(380000);
+
+    // Enable recast of 50,000 -> Net loan = 400,000 - 50,000 - 20,000 = 330,000
+    if (elEnableRecast) elEnableRecast.checked = true;
+    if (elRecastAmount) elRecastAmount.value = 50000;
+    expect(appModule.getNetLoanPrincipal()).toBe(330000);
+  });
+
+  it('should reset target principal to loan amount minus recast lump sum & one-time extra payments when reset button is clicked', () => {
+    appModule.resetToDefaults();
+    const elHomePrice = document.getElementById('home-price');
+    const elDownPayment = document.getElementById('down-payment');
+    const elEnableRecast = document.getElementById('enable-recast');
+    const elRecastAmount = document.getElementById('recast-amount');
     const elTargetPrincipal = document.getElementById('target-principal');
     const btnReset = document.getElementById('btn-reset-target-principal');
 
-    elHomePrice.value = 500000;
+    elHomePrice.value = 600000;
     elHomePrice.dispatchEvent(new Event('input'));
-    elDownPayment.value = 100000;
+    elDownPayment.value = 100000; // Base loan = 500,000
     elDownPayment.dispatchEvent(new Event('input'));
 
-    // Change target principal to arbitrary value
-    elTargetPrincipal.value = 150000;
+    // Set recast 50,000
+    if (elEnableRecast) {
+      elEnableRecast.checked = true;
+      elEnableRecast.dispatchEvent(new Event('change'));
+    }
+    if (elRecastAmount) {
+      elRecastAmount.value = 50000;
+      elRecastAmount.dispatchEvent(new Event('input'));
+    }
 
-    // Reset should set target principal to homePrice - downPayment = 400,000
+    // Set scheduled one-time payment of 30,000
+    appModule.setScheduledOneTimePayments([{ id: 'p1', amount: 30000, month: 24 }]);
+    appModule.recalculate();
+
+    // Remaining net loan principal should be 500,000 - 50,000 - 30,000 = 420,000
+    expect(parseFloat(elTargetPrincipal.value)).toBe(420000);
+
+    // User types custom value into target principal
+    elTargetPrincipal.value = 250000;
+    elTargetPrincipal.dispatchEvent(new Event('input'));
+    expect(parseFloat(elTargetPrincipal.value)).toBe(250000);
+
+    // Reset button click should restore target principal to 420,000
     btnReset.dispatchEvent(new Event('click'));
-    expect(parseFloat(elTargetPrincipal.value)).toBe(400000);
+    expect(parseFloat(elTargetPrincipal.value)).toBe(420000);
+  });
+
+  it('should suggest an extra monthly payment when calculated loan term is greater than target payoff term (e.g. 7 year target)', () => {
+    appModule.resetToDefaults();
+    const elHomePrice = document.getElementById('home-price');
+    const elDownPayment = document.getElementById('down-payment');
+    const elInterestRate = document.getElementById('interest-rate');
+    const elTargetTerm = document.getElementById('target-term');
+    const elTargetExtraPayment = document.getElementById('target-extra-payment');
+
+    // 1,040,000 Loan at 5.0%
+    elHomePrice.value = 1300000;
+    elHomePrice.dispatchEvent(new Event('input'));
+    elDownPayment.value = 260000; // Loan = 1,040,000
+    elDownPayment.dispatchEvent(new Event('input'));
+    elInterestRate.value = 5.0;
+    elInterestRate.dispatchEvent(new Event('input'));
+
+    // Set lump sums (500k at month 12, 50k at month 36, 50k at month 48) -> actual payoff ~9.5 years
+    appModule.setScheduledOneTimePayments([
+      { id: '1', amount: 500000, month: 12 },
+      { id: '2', amount: 50000, month: 36 },
+      { id: '3', amount: 50000, month: 48 }
+    ]);
+    appModule.recalculate();
+
+    // Actual payoff with these lump sums is ~9.5 years
+    // Set target term to 7 years
+    elTargetTerm.value = 7;
+    elTargetTerm.dispatchEvent(new Event('input'));
+
+    // Since actual payoff term (~9.5 yrs) > target payoff term (7 yrs), extra payment must be > $0 (~$1,198/mo)
+    const calc = appModule.calculateTargetExtraPayment();
+    expect(calc.extraRequired).toBeGreaterThan(1000);
+    expect(elTargetExtraPayment.textContent).not.toBe('$0.00');
   });
 });
 

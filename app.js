@@ -28,6 +28,7 @@ let scheduledOneTimePayments = [
   { id: 'default-1', amount: 5000, month: 12 }
 ];
 let isSimpleMode = false;
+let isTargetPrincipalUserModified = false;
 
 // DOM Element Selections
 const elHomePrice = document.getElementById('home-price');
@@ -268,6 +269,25 @@ function getTotalLumpSumAmount(oneTimeExtra) {
     return oneTimeExtra.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
   }
   return parseFloat(oneTimeExtra) || 0;
+}
+
+/**
+ * Helper to compute net loan principal after subtracting any recast lump sum
+ * amount AND any scheduled one-time extra prepayments.
+ */
+function getNetLoanPrincipal() {
+  const price = parseFloat(elHomePrice ? elHomePrice.value : 0) || 0;
+  const dp = parseFloat(elDownPayment ? elDownPayment.value : 0) || 0;
+  const baseLoanAmt = Math.max(0, price - dp);
+
+  const isRecast = elEnableRecast ? elEnableRecast.checked : false;
+  const recastLumpSum = isRecast ? (parseFloat(elRecastAmount ? elRecastAmount.value : 0) || 0) : 0;
+
+  const oneTimeLumpSum = (scheduledOneTimePayments && scheduledOneTimePayments.length > 0)
+    ? getTotalLumpSumAmount(scheduledOneTimePayments)
+    : (parseFloat(elOneTimeExtra ? elOneTimeExtra.value : 0) || 0);
+
+  return Math.max(0, baseLoanAmt - recastLumpSum - oneTimeLumpSum);
 }
 
 /**
@@ -559,77 +579,126 @@ function simulateTotalInterest(principal, initialRate, termYears, extraMonthly =
 // TARGET TERM CALCULATOR
 // ==========================================================================
 
-function updateTargetTermCalculator() {
-  const targetYears = parseFloat(elTargetTerm.value) || 15;
-  const targetPrincipal = parseFloat(elTargetPrincipal.value) || 0;
-  const annualRate = parseFloat(elInterestRate.value) || 0;
-
-  const monthlyRate = (annualRate / 100) / 12;
+/**
+ * Calculates the extra monthly payment required to achieve the target payoff term.
+ * If the calculated loan term (actual payoff) is greater than the target payoff term,
+ * it calculates the additional monthly payment needed to eliminate the remaining balance at target term.
+ */
+function calculateTargetExtraPayment() {
+  const targetYears = parseFloat(elTargetTerm ? elTargetTerm.value : 15) || 15;
   const targetMonths = targetYears * 12;
-  const originalBasePayment = currentSchedule.summary.baseMonthlyPayment || 0;
+  const annualRate = parseFloat(elInterestRate ? elInterestRate.value : 0) || 0;
+  const monthlyRate = (annualRate / 100) / 12;
+  const baseMonthlyPayment = currentSchedule.summary ? (currentSchedule.summary.baseMonthlyPayment || 0) : 0;
+  const currentExtraMonthly = parseFloat(elExtraMonthly ? elExtraMonthly.value : 0) || 0;
 
-  // Calculate total monthly payment needed to pay off in target term
-  let requiredTotalPayment = 0;
-  if (targetPrincipal > 0) {
-    if (monthlyRate === 0) {
-      requiredTotalPayment = targetPrincipal / targetMonths;
-    } else {
-      requiredTotalPayment = (
-        (targetPrincipal * (monthlyRate * Math.pow(1 + monthlyRate, targetMonths))) /
-        (Math.pow(1 + monthlyRate, targetMonths) - 1)
-      );
+  if (isTargetPrincipalUserModified && elTargetPrincipal) {
+    const customP = parseFloat(elTargetPrincipal.value) || 0;
+    if (customP <= 0 || targetMonths <= 0) {
+      return { extraRequired: 0, requiredTotalPnI: baseMonthlyPayment + currentExtraMonthly };
     }
+    let requiredTotalPnI = 0;
+    if (monthlyRate === 0) {
+      requiredTotalPnI = customP / targetMonths;
+    } else {
+      requiredTotalPnI = (customP * (monthlyRate * Math.pow(1 + monthlyRate, targetMonths))) /
+        (Math.pow(1 + monthlyRate, targetMonths) - 1);
+    }
+    const extraRequired = Math.max(0, requiredTotalPnI - baseMonthlyPayment);
+    return { extraRequired, requiredTotalPnI };
   }
 
-  // Extra monthly payment required is the difference
-  let extraMonthlyRequired = Math.max(0, requiredTotalPayment - originalBasePayment);
+  // Automatic calculation based on accelerated schedule balance at targetMonths
+  const accSchedule = currentSchedule.accelerated || [];
 
-  // If remaining principal is different from original principal, we compare with the base payment
-  // corresponding to the original loan.
-  elTargetExtraPayment.textContent = formatCurrency(extraMonthlyRequired);
+  if (targetMonths <= 0 || accSchedule.length === 0) {
+    return { extraRequired: 0, requiredTotalPnI: baseMonthlyPayment + currentExtraMonthly };
+  }
+
+  let targetP = 0;
+  if (targetMonths <= accSchedule.length) {
+    const idx = targetMonths - 1;
+    targetP = accSchedule[idx] ? accSchedule[idx].endingBalance : 0;
+  }
+
+  if (targetP <= 0) {
+    return { extraRequired: 0, requiredTotalPnI: baseMonthlyPayment + currentExtraMonthly, targetP: 0 };
+  }
+
+  let x = 0;
+  if (monthlyRate === 0) {
+    x = targetP / targetMonths;
+  } else {
+    const factor = Math.pow(1 + monthlyRate, targetMonths) - 1;
+    x = factor > 0 ? (targetP * monthlyRate) / factor : 0;
+  }
+
+  const extraRequired = currentExtraMonthly + x;
+  const requiredTotalPnI = baseMonthlyPayment + extraRequired;
+
+  return { extraRequired, requiredTotalPnI, targetP };
+}
+
+function updateTargetTermCalculator() {
+  const targetYears = parseFloat(elTargetTerm ? elTargetTerm.value : 15) || 15;
+  const targetMonths = targetYears * 12;
+  const annualRate = parseFloat(elInterestRate ? elInterestRate.value : 0) || 0;
+  const monthlyRate = (annualRate / 100) / 12;
+
+  const { extraRequired, requiredTotalPnI } = calculateTargetExtraPayment();
+
+  if (elTargetExtraPayment) {
+    elTargetExtraPayment.textContent = formatCurrency(extraRequired);
+  }
 
   const homePrice = parseFloat(document.getElementById('home-price').value) || 0;
-  const propTaxRate = parseFloat(elPropertyTax.value) || 0;
-  const insRate = parseFloat(elHomeInsurance.value) || 0;
+  const propTaxRate = parseFloat(elPropertyTax ? elPropertyTax.value : 0) || 0;
+  const insRate = parseFloat(elHomeInsurance ? elHomeInsurance.value : 0) || 0;
   const monthlyTax = (homePrice * (propTaxRate / 100)) / 12;
   const monthlyInsurance = (homePrice * (insRate / 100)) / 12;
 
-  elTargetTotalPayment.textContent = formatCurrency(requiredTotalPayment + monthlyTax + monthlyInsurance);
+  if (elTargetTotalPayment) {
+    elTargetTotalPayment.textContent = formatCurrency(requiredTotalPnI + monthlyTax + monthlyInsurance);
+  }
 
   // Estimate interest under target schedule
-  let targetBalance = targetPrincipal;
+  const price = parseFloat(elHomePrice ? elHomePrice.value : 0) || 0;
+  const dp = parseFloat(elDownPayment ? elDownPayment.value : 0) || 0;
+  const startingPrincipal = Math.max(0, price - dp);
+
+  let targetBalance = startingPrincipal;
   let targetTotalInterest = 0;
+  const isRecast = elEnableRecast ? elEnableRecast.checked : false;
+  const recastAmt = isRecast ? (parseFloat(elRecastAmount ? elRecastAmount.value : 0) || 0) : 0;
+  const recastMo = isRecast ? (parseInt(elRecastMonth ? elRecastMonth.value : 60) || 60) : 0;
+
   for (let m = 1; m <= targetMonths; m++) {
+    if (targetBalance <= 0) break;
     const interest = targetBalance * monthlyRate;
-    let principalPaid = requiredTotalPayment - interest;
-    if (targetBalance + interest < requiredTotalPayment) {
+
+    let lumpSum = getLumpSumForMonth(scheduledOneTimePayments, 12, m);
+    if (isRecast && m === recastMo) {
+      lumpSum += recastAmt;
+    }
+
+    const monthlyPayment = requiredTotalPnI + lumpSum;
+    let principalPaid = Math.max(0, monthlyPayment - interest);
+    if (targetBalance < principalPaid) {
       principalPaid = targetBalance;
     }
     targetBalance = Math.max(0, targetBalance - principalPaid);
     targetTotalInterest += interest;
-    if (targetBalance <= 0) break;
   }
 
-  elTargetInterestPaid.textContent = formatCurrency(targetTotalInterest);
-
-  // Calculate savings vs base schedule
-  // Find what the interest would be for the remaining principal under standard payments
-  let baseInterestForRemaining = 0;
-  let baseBalance = targetPrincipal;
-  for (let m = 1; m <= (parseFloat(elLoanTerm.value) * 12); m++) {
-    const interest = baseBalance * monthlyRate;
-    let principalPaid = originalBasePayment - interest;
-    if (principalPaid < 0) principalPaid = 0; // Avoid negative principal if interest is high
-    if (baseBalance + interest < originalBasePayment) {
-      principalPaid = baseBalance;
-    }
-    baseBalance = Math.max(0, baseBalance - principalPaid);
-    baseInterestForRemaining += interest;
-    if (baseBalance <= 0) break;
+  if (elTargetInterestPaid) {
+    elTargetInterestPaid.textContent = formatCurrency(targetTotalInterest);
   }
 
-  const interestSaved = Math.max(0, baseInterestForRemaining - targetTotalInterest);
-  elTargetInterestSaved.textContent = formatCurrency(interestSaved);
+  const stdTotalInterest = currentSchedule.summary ? (currentSchedule.summary.standardTotalInterest || 0) : 0;
+  const interestSaved = Math.max(0, stdTotalInterest - targetTotalInterest);
+  if (elTargetInterestSaved) {
+    elTargetInterestSaved.textContent = formatCurrency(interestSaved);
+  }
 }
 
 // ==========================================================================
@@ -2111,7 +2180,9 @@ function serializeCurrentState() {
     activeLoanPreset: activeLoanPreset,
     isArmLoan: isArmLoan,
     armFixedTerm: parseFloat(elArmFixedTerm ? elArmFixedTerm.value : 5) || 5,
-    armAdjustedRate: parseFloat(elArmAdjustedRate ? elArmAdjustedRate.value : 7.5) || 7.5
+    armAdjustedRate: parseFloat(elArmAdjustedRate ? elArmAdjustedRate.value : 7.5) || 7.5,
+    targetPrincipal: parseFloat(elTargetPrincipal ? elTargetPrincipal.value : 0) || 0,
+    isTargetPrincipalUserModified: isTargetPrincipalUserModified
   };
 }
 
@@ -2254,6 +2325,18 @@ function applyStateObject(state) {
     elArmAdjustedRate.value = state.armAdjustedRate;
     elArmAdjustedRateSlider.value = state.armAdjustedRate;
   }
+
+  if (state.isTargetPrincipalUserModified !== undefined) {
+    isTargetPrincipalUserModified = !!state.isTargetPrincipalUserModified;
+  } else {
+    isTargetPrincipalUserModified = false;
+  }
+
+  if (state.targetPrincipal !== undefined && state.targetPrincipal !== null && elTargetPrincipal) {
+    elTargetPrincipal.value = state.targetPrincipal;
+  } else if (elTargetPrincipal) {
+    elTargetPrincipal.value = getNetLoanPrincipal();
+  }
 }
 
 function autoSaveCurrentState() {
@@ -2314,6 +2397,7 @@ function resetToDefaults() {
 
   loanPresetRates = { ...DEFAULT_PRESET_RATES };
   loanPresetRates['30-fixed'] = currentInterestRate;
+  isTargetPrincipalUserModified = false;
 
   const defaultState = {
     homePrice: currentHomePrice,
@@ -2853,6 +2937,10 @@ function recalculate() {
     recastMonth
   );
 
+  if (!isTargetPrincipalUserModified && elTargetPrincipal) {
+    elTargetPrincipal.value = getNetLoanPrincipal();
+  }
+
   updateUI();
   updateTargetTermCalculator();
   autoSaveCurrentState();
@@ -3240,43 +3328,24 @@ function setupEventHandlers() {
     updateTargetTermCalculator();
   });
 
-  elTargetPrincipal.addEventListener('input', updateTargetTermCalculator);
+  elTargetPrincipal.addEventListener('input', () => {
+    isTargetPrincipalUserModified = true;
+    updateTargetTermCalculator();
+  });
 
   elBtnResetTargetPrincipal.addEventListener('click', () => {
-    // Reset target principal to the currently active loan amount
-    const price = parseFloat(elHomePrice.value) || 0;
-    const dp = parseFloat(elDownPayment.value) || 0;
-    const loanAmt = Math.max(0, price - dp);
-    elTargetPrincipal.value = loanAmt;
+    // Reset target principal to loan amount minus recast lump sum & one-time extra payments
+    isTargetPrincipalUserModified = false;
+    elTargetPrincipal.value = getNetLoanPrincipal();
     updateTargetTermCalculator();
   });
 
   elBtnApplyTarget.addEventListener('click', () => {
-    // Calculate needed extra
-    const targetYears = parseFloat(elTargetTerm.value) || 15;
-    const targetPrincipal = parseFloat(elTargetPrincipal.value) || 0;
-    const annualRate = parseFloat(elInterestRate.value) || 0;
-    const monthlyRate = (annualRate / 100) / 12;
-    const targetMonths = targetYears * 12;
-    const originalBasePayment = currentSchedule.summary.baseMonthlyPayment || 0;
+    const { extraRequired } = calculateTargetExtraPayment();
+    const extraToApply = Math.round(Math.max(0, extraRequired));
 
-    let requiredTotalPayment = 0;
-    if (targetPrincipal > 0) {
-      if (monthlyRate === 0) {
-        requiredTotalPayment = targetPrincipal / targetMonths;
-      } else {
-        requiredTotalPayment = (
-          (targetPrincipal * (monthlyRate * Math.pow(1 + monthlyRate, targetMonths))) /
-          (Math.pow(1 + monthlyRate, targetMonths) - 1)
-        );
-      }
-    }
-
-    const extraRequired = Math.round(Math.max(0, requiredTotalPayment - originalBasePayment));
-
-    // Apply to UI parameters
-    elExtraMonthly.value = extraRequired;
-    elExtraMonthlySlider.value = extraRequired;
+    elExtraMonthly.value = extraToApply;
+    if (elExtraMonthlySlider) elExtraMonthlySlider.value = extraToApply;
     recalculate();
 
     // Scroll smoothly to acceleration section in form
@@ -4608,6 +4677,8 @@ function getActiveZoomPreset() {
 export {
   calculateMonthlyPayment,
   calculateAmortizationSchedules,
+  getNetLoanPrincipal,
+  calculateTargetExtraPayment,
   formatCurrency,
   init,
   recalculate,

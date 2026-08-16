@@ -48,3 +48,5 @@ Thumbs.db
 
 .agents/*
 node_modules/*
+.examples/*
+.examples
