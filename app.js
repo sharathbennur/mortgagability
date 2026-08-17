@@ -1,6 +1,13 @@
-// ==========================================================================
-// MORTGAGE-ABILITY.COM APPLICATION ENGINE
-// ==========================================================================
+import {
+  initOnboarding,
+  setupOnboardingHandlers,
+  openWizard,
+  closeWizard,
+  showTransitionModal,
+  closeTransitionModal,
+  startSpotlightTour,
+  endSpotlightTour
+} from './src/js/features/onboarding.js';
 
 // Global state variables
 let currentSchedule = {
@@ -137,7 +144,8 @@ const STORAGE_KEYS = {
   SCENARIOS: 'mortgagability_scenarios',
   CURRENT_STATE: 'mortgagability_current_state',
   THEME: 'mortgagability_theme',
-  MODE: 'mortgagability_simple_mode'
+  MODE: 'mortgagability_simple_mode',
+  HAS_SEEN_ONBOARDING: 'mortgagability_has_seen_onboarding'
 };
 
 const DEFAULT_INPUT_VALUES = {
@@ -4651,6 +4659,7 @@ function init() {
   setupHelpHandlers();
   setupAccordionHandlers();
   setupOneTimePaymentsHandlers();
+  setupOnboardingHandlers();
 
   // Restore saved scenarios list and last active session state
   restoreCurrentState();
@@ -4662,6 +4671,9 @@ function init() {
 
   // Run initial calculations
   recalculate();
+
+  // Trigger Onboarding Flow for first-time visitors (or if forced)
+  initOnboarding();
 }
 
 // Start application
@@ -4727,5 +4739,13 @@ export {
   getMaxCompareCount,
   openCompareModal,
   closeCompareModal,
-  renderCompareMatrix
+  renderCompareMatrix,
+  initOnboarding,
+  setupOnboardingHandlers,
+  openWizard,
+  closeWizard,
+  showTransitionModal,
+  closeTransitionModal,
+  startSpotlightTour,
+  endSpotlightTour
 };

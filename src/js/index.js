@@ -120,6 +120,17 @@ import {
   updateAccordionSummaries
 } from './ui/accordions.js';
 
+import {
+  initOnboarding,
+  openWizard,
+  closeWizard,
+  showTransitionModal,
+  closeTransitionModal,
+  startSpotlightTour,
+  endSpotlightTour,
+  setupOnboardingHandlers
+} from './features/onboarding.js';
+
 export {
   // Constants & Utilities
   STORAGE_KEYS,
@@ -170,6 +181,14 @@ export {
   closeCompareModal,
   renderCompareModalChips,
   renderCompareMatrix,
+  initOnboarding,
+  openWizard,
+  closeWizard,
+  showTransitionModal,
+  closeTransitionModal,
+  startSpotlightTour,
+  endSpotlightTour,
+  setupOnboardingHandlers,
 
   // UI Components
   getElements,

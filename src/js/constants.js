@@ -6,7 +6,8 @@ export const STORAGE_KEYS = {
   SCENARIOS: 'mortgagability_scenarios',
   CURRENT_STATE: 'mortgagability_current_state',
   THEME: 'mortgagability_theme',
-  MODE: 'mortgagability_simple_mode'
+  MODE: 'mortgagability_simple_mode',
+  HAS_SEEN_ONBOARDING: 'mortgagability_has_seen_onboarding'
 };
 
 export const DEFAULT_INPUT_VALUES = {

@@ -133,5 +133,6 @@ export const getElements = () => ({
   themeToggleIcon: document.getElementById('theme-toggle-icon'),
   btnModeToggle: document.getElementById('btn-mode-toggle'),
   modeToggleIcon: document.getElementById('mode-toggle-icon'),
-  modeToggleText: document.getElementById('mode-toggle-text')
+  modeToggleText: document.getElementById('mode-toggle-text'),
+  btnStartOnboarding: document.getElementById('btn-start-onboarding')
 });

@@ -2109,7 +2109,137 @@ describe('15. Collapsible Accordion Input Panels & Mobile Floating Summary Bar',
       expect(container.innerHTML).toContain('PMI Waived!');
     });
   });
+
+  describe('12. Hybrid Onboarding Flow Tests (Wizard & Spotlight Tour)', () => {
+    beforeEach(() => {
+      window.localStorage.clear();
+      appModule.closeWizard();
+      appModule.closeTransitionModal();
+      appModule.endSpotlightTour();
+    });
+
+    it('should open wizard modal when initOnboarding is called for first-time visitors', () => {
+      const modal = document.getElementById('modal-onboarding-wizard');
+      appModule.initOnboarding(true);
+
+      expect(modal.style.display).toBe('flex');
+      expect(document.getElementById('wizard-title').textContent).toContain('Welcome to Mortgage-Ability!');
+    });
+
+    it('should navigate through 5 wizard steps and update inputs in real-time', () => {
+      appModule.openWizard();
+
+      const btnNext = document.getElementById('btn-wizard-next');
+      const btnPrev = document.getElementById('btn-wizard-prev');
+
+      // Step 1 -> Step 2
+      btnNext.click();
+      expect(document.getElementById('wizard-step-badge').textContent).toContain('Step 2 of 5');
+
+      const wizHp = document.getElementById('wiz-home-price');
+      expect(wizHp).not.toBeNull();
+      wizHp.value = '550000';
+      wizHp.dispatchEvent(new Event('input', { bubbles: true }));
+      expect(document.getElementById('home-price').value).toBe('550000');
+
+      // Step 2 -> Step 3
+      btnNext.click();
+      expect(document.getElementById('wizard-step-badge').textContent).toContain('Step 3 of 5');
+
+      // Step 3 -> Step 4
+      btnNext.click();
+      expect(document.getElementById('wizard-step-badge').textContent).toContain('Step 4 of 5');
+
+      // Step 4 -> Step 5
+      btnNext.click();
+      expect(document.getElementById('wizard-step-badge').textContent).toContain('Step 5 of 5');
+      expect(btnNext.textContent).toContain('See My Mortgage Breakdown');
+
+      // Step 5 -> Step 4 (Back test)
+      btnPrev.click();
+      expect(document.getElementById('wizard-step-badge').textContent).toContain('Step 4 of 5');
+    });
+
+    it('should complete wizard, show transition modal, and start Stage 2 Spotlight Tour', () => {
+      appModule.openWizard();
+
+      // Advance to step 5
+      const btnNext = document.getElementById('btn-wizard-next');
+      btnNext.click(); // step 2
+      btnNext.click(); // step 3
+      btnNext.click(); // step 4
+      btnNext.click(); // step 5
+      btnNext.click(); // complete -> shows transition screen
+
+      const wizardModal = document.getElementById('modal-onboarding-wizard');
+      const transitionModal = document.getElementById('modal-onboarding-transition');
+      const spotlightOverlay = document.getElementById('onboarding-spotlight-overlay');
+      const spotlightCard = document.getElementById('onboarding-spotlight-card');
+
+      expect(wizardModal.style.display).toBe('none');
+      expect(transitionModal.style.display).toBe('flex');
+
+      // Click "Show Me How To Use The App" button on transition screen
+      const btnStartSpotlight = document.getElementById('btn-start-spotlight-tour');
+      btnStartSpotlight.click();
+
+      expect(transitionModal.style.display).toBe('none');
+      expect(spotlightOverlay.style.display).toBe('block');
+      expect(spotlightCard.style.display).toBe('flex');
+      expect(document.getElementById('spotlight-title').textContent).toContain('Your Loan Parameters Inputs');
+    });
+
+    it('should navigate through 6 spotlight steps and finish tour', () => {
+      appModule.startSpotlightTour();
+
+      const btnSpotlightNext = document.getElementById('btn-spotlight-next');
+      const btnSpotlightPrev = document.getElementById('btn-spotlight-prev');
+
+      // Step 1 initial title check (Loan Parameters Inputs)
+      expect(document.getElementById('spotlight-step-num').textContent).toContain('1/6');
+      expect(document.getElementById('spotlight-title').textContent).toContain('Your Loan Parameters Inputs');
+
+      // Step 1 -> Step 2
+      btnSpotlightNext.click();
+      expect(document.getElementById('spotlight-step-num').textContent).toContain('2/6');
+      expect(document.getElementById('spotlight-title').textContent).toContain('Monthly Payment Breakdown');
+
+      // Step 2 -> Step 3
+      btnSpotlightNext.click();
+      expect(document.getElementById('spotlight-step-num').textContent).toContain('3/6');
+      expect(document.getElementById('spotlight-title').textContent).toContain('Lifetime Interest Paid');
+
+      // Step 3 -> Step 4
+      btnSpotlightNext.click();
+      expect(document.getElementById('spotlight-step-num').textContent).toContain('4/6');
+
+      // Step 4 -> Step 5 (Amortization Table)
+      btnSpotlightNext.click();
+      expect(document.getElementById('spotlight-step-num').textContent).toContain('5/6');
+      expect(document.getElementById('spotlight-title').textContent).toContain('Amortization Schedule Table');
+
+      // Step 5 -> Step 6 (Advanced Mode & Help Glossary)
+      btnSpotlightNext.click();
+      expect(document.getElementById('spotlight-step-num').textContent).toContain('6/6');
+      expect(document.getElementById('spotlight-title').textContent).toContain('Advanced Mode & Help Glossary');
+
+      // Finish Tour
+      btnSpotlightNext.click();
+      expect(document.getElementById('onboarding-spotlight-overlay').style.display).toBe('none');
+      expect(localStorage.getItem(appModule.STORAGE_KEYS.HAS_SEEN_ONBOARDING)).toBe('true');
+    });
+
+    it('should open wizard on demand when top navbar Guide button is clicked', () => {
+      const btnGuide = document.getElementById('btn-start-onboarding');
+      expect(btnGuide).not.toBeNull();
+
+      btnGuide.click();
+      const modal = document.getElementById('modal-onboarding-wizard');
+      expect(modal.style.display).toBe('flex');
+    });
+  });
 });
+
 
 
 

@@ -50,3 +50,9 @@ Thumbs.db
 node_modules/*
 .examples/*
 .examples
+
+.env*
+*-key.json
+service-account*.json
+.firebase/
+dist/

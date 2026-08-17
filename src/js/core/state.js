@@ -23,6 +23,7 @@ let compareSelectedIds = [];
 let isSimpleMode = false;
 let isTargetPrincipalUserModified = false;
 let currentScenarioId = null;
+let isOnboardingActive = false;
 
 // Loan Structure State
 let activeLoanPreset = '30-fixed';
@@ -297,3 +298,33 @@ export function isMobileViewport() {
 export function getMaxCompareCount() {
   return isMobileViewport() ? 2 : 4;
 }
+
+export function getIsOnboardingActive() {
+  return isOnboardingActive;
+}
+
+export function setIsOnboardingActive(val) {
+  isOnboardingActive = !!val;
+}
+
+export function getHasSeenOnboarding() {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      return localStorage.getItem(STORAGE_KEYS.HAS_SEEN_ONBOARDING) === 'true';
+    }
+  } catch (e) {
+    // Storage access error
+  }
+  return false;
+}
+
+export function setHasSeenOnboarding(val) {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.HAS_SEEN_ONBOARDING, val ? 'true' : 'false');
+    }
+  } catch (e) {
+    // Storage access error
+  }
+}
+

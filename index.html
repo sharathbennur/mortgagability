@@ -116,7 +116,7 @@
         </div>
 
         <!-- Top Navbar Utilities (Theme Toggle & Simple Mode & Help/Glossary & Reset Defaults) -->
-        <div class="navbar-utility-actions">
+        <div class="navbar-utility-actions" id="navbar-utility-actions">
           <button type="button" id="btn-reset-defaults" class="btn btn-xs btn-outline btn-reset-defaults"
             title="Reset all input parameters to default settings" aria-label="Reset all input parameters to default settings">
             <i class="fa-solid fa-arrow-rotate-left"></i> <span>Reset Defaults</span>
@@ -132,6 +132,10 @@
           <button type="button" id="btn-help-glossary" class="btn btn-xs btn-outline btn-help-glossary"
             title="Open Help & Glossary" aria-label="Open Help & Glossary">
             <i class="fa-solid fa-circle-question"></i> Help &amp; Glossary
+          </button>
+          <button type="button" id="btn-start-onboarding" class="btn btn-xs btn-outline btn-start-onboarding"
+            title="Start Interactive Onboarding Tour" aria-label="Start Interactive Onboarding Tour">
+            <i class="fa-solid fa-compass"></i> Guide
           </button>
         </div>
       </div>
@@ -150,7 +154,7 @@
     <main class="dashboard-grid">
 
       <!-- Left Panel: Inputs -->
-      <section class="panel inputs-panel">
+      <section class="panel inputs-panel" id="inputs-panel">
         <form id="mortgage-form" class="accordion-container" onsubmit="event.preventDefault();">
 
           <!-- Accordion 1: Loan & Property Parameters -->
@@ -801,13 +805,13 @@
             <div class="kpi-value" id="kpi-time-saved">0 Months</div>
             <div class="kpi-footer">
               <span>New Payoff: </span>
-              <strong id="kpi-payoff-term">0 Yrs</strong>
+                  <strong id="kpi-payoff-term">0 Yrs</strong>
             </div>
           </div>
         </section>
 
         <!-- Charts Section -->
-        <section class="panel chart-panel">
+        <section class="panel chart-panel" id="chart-panel">
           <div class="chart-header-row">
             <div class="panel-header">
               <i class="fa-solid fa-chart-line"></i>
@@ -903,7 +907,7 @@
         </section>
 
         <!-- Amortization Table Section -->
-        <section class="panel table-panel">
+        <section class="panel table-panel" id="table-panel">
           <div class="table-header-row">
             <div class="panel-header">
               <i class="fa-solid fa-table-list"></i>
@@ -1188,6 +1192,113 @@
       <div class="mobile-summary-metric">
         <span class="mobile-metric-label">Net Cash Flow</span>
         <strong class="mobile-metric-val" id="mobile-kpi-cashflow">$0/mo</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progressive Onboarding Wizard Modal (Stage 1) -->
+  <div id="modal-onboarding-wizard" class="modal-backdrop onboarding-wizard-backdrop" style="display: none;">
+    <div class="modal-card modal-card-lg onboarding-wizard-card">
+      <div class="modal-header onboarding-wizard-header">
+        <div class="wizard-header-title">
+          <i class="fa-solid fa-compass text-primary"></i>
+          <span id="wizard-step-badge" class="wizard-step-badge">Step 1 of 5</span>
+          <h3 id="wizard-title">Welcome to Mortgage-Ability!</h3>
+        </div>
+        <button type="button" id="btn-x-close-wizard" class="btn-close-modal" aria-label="Close Onboarding Wizard"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- Stepper Progress Bar -->
+      <div class="wizard-progress-bar-container">
+        <div class="wizard-progress-track">
+          <div class="wizard-progress-fill" id="wizard-progress-fill" style="width: 20%;"></div>
+        </div>
+        <div class="wizard-stepper-dots" id="wizard-stepper-dots">
+          <span class="step-dot active" data-step="1">1</span>
+          <span class="step-dot" data-step="2">2</span>
+          <span class="step-dot" data-step="3">3</span>
+          <span class="step-dot" data-step="4">4</span>
+          <span class="step-dot" data-step="5">5</span>
+        </div>
+      </div>
+
+      <div class="modal-body onboarding-wizard-body" id="wizard-body-container">
+        <!-- Rendered dynamically via onboarding.js -->
+      </div>
+
+      <div class="modal-footer onboarding-wizard-footer">
+        <button type="button" id="btn-wizard-skip" class="btn btn-sm btn-outline">Skip Onboarding</button>
+        <div class="wizard-footer-right">
+          <button type="button" id="btn-wizard-prev" class="btn btn-sm btn-outline" style="display: none;">
+            <i class="fa-solid fa-arrow-left"></i> Back
+          </button>
+          <button type="button" id="btn-wizard-next" class="btn btn-sm btn-primary">
+            Next <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Onboarding Transition Screen Modal (Stage 1.5) -->
+  <div id="modal-onboarding-transition" class="modal-backdrop onboarding-wizard-backdrop" style="display: none;">
+    <div class="modal-card modal-card-md onboarding-transition-card">
+      <div class="modal-header onboarding-transition-header text-center" style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;">
+        <div class="transition-icon-pulse">
+          <i class="fa-solid fa-sliders text-primary" style="font-size: 1.5rem;"></i>
+          <i class="fa-solid fa-arrow-right text-muted mx-2" style="font-size: 1.2rem;"></i>
+          <i class="fa-solid fa-chart-pie text-success" style="font-size: 1.5rem;"></i>
+        </div>
+        <h3 style="margin: 6px 0 0 0; font-size: 1.25rem;">Setting Up Your Custom Dashboard...</h3>
+        <p class="transition-subtitle" style="font-size: 0.88rem; color: var(--text-secondary); margin: 0; max-width: 440px;">
+          We are putting the information you provided into the app engine to generate your live mortgage calculations.
+        </p>
+      </div>
+
+      <div class="modal-body onboarding-transition-body" style="padding: 16px 20px;">
+        <div class="transition-step-box">
+          <div class="transition-step-item completed">
+            <i class="fa-solid fa-circle-check text-success" style="font-size: 1.3rem;"></i>
+            <div>
+              <strong style="display: block; font-size: 0.92rem; color: var(--text-primary);">1. Data Entry Complete</strong>
+              <span style="font-size: 0.82rem; color: var(--text-muted);">Home Price, Down Payment, Interest Rate, Term & Escrow configured.</span>
+            </div>
+          </div>
+          <div class="transition-step-divider"></div>
+          <div class="transition-step-item active">
+            <i class="fa-solid fa-circle-play text-primary" style="font-size: 1.3rem;"></i>
+            <div>
+              <strong style="display: block; font-size: 0.92rem; color: var(--text-primary);">2. Interactive Feature Tour</strong>
+              <span style="font-size: 0.82rem; color: var(--text-muted);">We will now show you how to use the app, where your data appears, and where to find advanced tools.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer onboarding-transition-footer" style="padding: 16px 20px; justify-content: center;">
+        <button type="button" id="btn-start-spotlight-tour" class="btn btn-primary btn-lg" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          Show Me How To Use The App <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stage 2: Dashboard Spotlight Tour Overlay & Popover Card -->
+  <div id="onboarding-spotlight-overlay" class="onboarding-spotlight-overlay" style="display: none;"></div>
+  <div id="onboarding-spotlight-card" class="onboarding-spotlight-card" style="display: none;">
+    <div class="spotlight-card-header">
+      <div class="spotlight-badge"><i class="fa-solid fa-lightbulb"></i> Dashboard Spotlight <span id="spotlight-step-num">1/4</span></div>
+      <button type="button" id="btn-close-spotlight" class="btn-close-modal" aria-label="Close Spotlight Tour"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="spotlight-card-body">
+      <h4 id="spotlight-title">Monthly Payment Breakdown (PITI)</h4>
+      <p id="spotlight-body-text">Here is where your Home Price, Down Payment, Interest Rate, Taxes, and Insurance add up into one total monthly payment.</p>
+    </div>
+    <div class="spotlight-card-footer">
+      <button type="button" id="btn-spotlight-skip" class="btn btn-xs btn-outline">Exit Tour</button>
+      <div class="spotlight-footer-nav">
+        <button type="button" id="btn-spotlight-prev" class="btn btn-xs btn-outline" style="display: none;"><i class="fa-solid fa-chevron-left"></i> Back</button>
+        <button type="button" id="btn-spotlight-next" class="btn btn-xs btn-primary">Next <i class="fa-solid fa-chevron-right"></i></button>
       </div>
     </div>
   </div>

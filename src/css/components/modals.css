@@ -759,3 +759,469 @@
   display: inline-flex;
   align-items: center;
 }
+
+/* ==========================================================================
+   HYBRID ONBOARDING WIZARD & SPOTLIGHT TOUR STYLES
+   ========================================================================== */
+
+.btn-start-onboarding {
+  color: var(--success) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  background: rgba(16, 185, 129, 0.08) !important;
+}
+
+.btn-start-onboarding:hover {
+  background: rgba(16, 185, 129, 0.18) !important;
+  border-color: var(--success) !important;
+}
+
+[data-theme="light"] .btn-start-onboarding {
+  color: #059669 !important;
+  border-color: rgba(5, 150, 105, 0.35) !important;
+  background: #ecfdf5 !important;
+}
+
+/* Progressive Wizard Modal */
+.onboarding-wizard-card {
+  max-width: 720px;
+  width: 95%;
+  max-height: 90vh;
+}
+
+.wizard-header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wizard-step-badge {
+  padding: 2px 10px;
+  border-radius: 12px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Stepper Progress Bar */
+.wizard-progress-bar-container {
+  padding: 12px 24px 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wizard-progress-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.wizard-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--accent-purple, #8b5cf6));
+  transition: width 0.3s ease;
+}
+
+.wizard-stepper-dots {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+}
+
+.step-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--panel-border);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s ease;
+}
+
+.step-dot.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+  box-shadow: 0 0 10px var(--primary-glow);
+}
+
+.step-dot.completed {
+  background: var(--success);
+  color: #ffffff;
+  border-color: var(--success);
+}
+
+/* Wizard Body & Guidance Grid */
+.onboarding-wizard-body {
+  padding: 20px 24px;
+}
+
+.wizard-slide {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.wizard-slide-hero {
+  text-align: center;
+  padding: 12px 16px;
+}
+
+.wizard-slide-hero i {
+  font-size: 2.2rem;
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+
+.wizard-slide-hero h4 {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.wizard-slide-hero p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+.wizard-input-guidance-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 640px) {
+  .wizard-input-guidance-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.wizard-input-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.wizard-guidance-card {
+  background: rgba(99, 102, 241, 0.06);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.guidance-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--primary-focus);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.guidance-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.guidance-section h5 {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.guidance-section p {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.guidance-tip-box {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: var(--success);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* Step 1 Accordion Card */
+.wizard-accordion-card {
+  width: 100%;
+}
+
+.wizard-details-accordion {
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 12px;
+  padding: 12px 16px;
+  transition: all 0.2s ease;
+}
+
+.wizard-details-accordion[open] {
+  background: rgba(99, 102, 241, 0.12);
+}
+
+.wizard-details-summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--primary-focus);
+  user-select: none;
+}
+
+.wizard-details-summary::-webkit-details-marker {
+  display: none;
+}
+
+.wizard-details-summary span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.accordion-chevron {
+  font-size: 0.8rem;
+  transition: transform 0.25s ease;
+  color: var(--text-muted);
+}
+
+.wizard-details-accordion[open] .accordion-chevron {
+  transform: rotate(180deg);
+  color: var(--primary-focus);
+}
+
+.wizard-details-content {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(99, 102, 241, 0.25);
+}
+
+.wizard-details-content p {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.wizard-recap-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.recap-tile {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.recap-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.recap-val {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Stage 2: Dashboard Spotlight Tour Overlay & Popover */
+.onboarding-spotlight-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(5, 8, 20, 0.75);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 100050;
+  pointer-events: auto;
+}
+
+/* Elevate specific parent containers ONLY when containing a spotlight highlight */
+.app-header:has(.spotlight-highlight),
+.top-navbar-right:has(.spotlight-highlight),
+.navbar-utility-actions:has(.spotlight-highlight),
+.scenario-toolbar:has(.spotlight-highlight),
+.inputs-panel:has(.spotlight-highlight) {
+  z-index: 100080 !important;
+  position: relative !important;
+}
+
+.spotlight-highlight {
+  position: relative !important;
+  z-index: 100085 !important;
+  box-shadow: 0 0 0 4px var(--primary), 0 0 24px var(--primary-glow) !important;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.onboarding-spotlight-card {
+  position: fixed;
+  z-index: 100100;
+  width: 340px;
+  background: rgba(18, 26, 47, 0.98);
+  border: 1px solid var(--primary);
+  border-radius: 16px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 20px var(--primary-glow);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fadeIn 0.2s ease-out;
+  transition: top 0.3s ease, left 0.3s ease;
+}
+
+[data-theme="light"] .onboarding-spotlight-card {
+  background: rgba(255, 255, 255, 0.98);
+  border-color: #6366f1;
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.25), 0 0 20px rgba(99, 102, 241, 0.2);
+}
+
+.spotlight-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.spotlight-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--primary-focus);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.spotlight-card-body h4 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.spotlight-card-body p {
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.spotlight-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid var(--panel-border);
+}
+
+.spotlight-footer-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ==========================================================================
+   ONBOARDING TRANSITION MODAL (STAGE 1.5)
+   ========================================================================== */
+
+.onboarding-transition-card {
+  max-width: 500px;
+  width: 90%;
+  padding: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  animation: modalPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.transition-icon-pulse {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 18px;
+  background: var(--bg-hover);
+  border-radius: 50px;
+  border: 1px solid var(--panel-border);
+}
+
+.transition-step-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--bg-hover);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.transition-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.transition-step-item.completed i {
+  color: var(--success);
+}
+
+.transition-step-item.active i {
+  color: var(--primary-focus);
+}
+
+.transition-step-divider {
+  height: 1px;
+  background: var(--panel-border);
+  margin: 2px 0;
+}
+
+
